@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -73,21 +73,53 @@ function AnimatedNumber({ value, decimals = 2 }: { value: number; decimals?: num
   );
 }
 
+// Mobile card view for expenses
+function ExpenseCard({ expense }: { expense: Expense }) {
+  return (
+    <div className="border border-[#3f3f3f] bg-[#212121] rounded-lg p-4 hover:bg-[#272727] transition-colors duration-150">
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <div className="font-medium text-[#f1f1f1] text-base">{expense.merchant}</div>
+          <div className="text-[#aaaaaa] text-sm mt-1">
+            {expense.date} · {expense.day}
+          </div>
+        </div>
+        <div className="text-right">
+          <div className="font-mono text-[#f1f1f1] font-semibold text-lg tabular-nums">
+            £{expense.amount.toFixed(2)}
+          </div>
+        </div>
+      </div>
+      {expense.location && (
+        <div className="text-[#aaaaaa] text-sm flex items-center gap-2">
+          <span>📍</span>
+          <span>{expense.location}</span>
+        </div>
+      )}
+      {expense.expenseType && (
+        <div className="text-[#aaaaaa] text-xs mt-2">
+          {expense.expenseType}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Loading skeleton component
 function LoadingSkeleton() {
   return (
-    <div className="min-h-screen bg-[#0f0f0f] p-8" style={{ padding: 'var(--space-xl)' }}>
-      <div className="max-w-7xl mx-auto space-y-6" style={{ gap: 'var(--space-xl)' }}>
+    <div className="min-h-screen bg-[#0f0f0f] p-4 sm:p-6 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header skeleton */}
         <div className="border-b border-[#3f3f3f] pb-6 space-y-3">
-          <div className="h-10 bg-[#212121] rounded-lg w-64 animate-pulse"></div>
-          <div className="h-4 bg-[#212121] rounded w-96 animate-pulse"></div>
+          <div className="h-8 sm:h-10 bg-[#212121] rounded-lg w-48 sm:w-64 animate-pulse"></div>
+          <div className="h-4 bg-[#212121] rounded w-full sm:w-96 animate-pulse"></div>
         </div>
 
         {/* Stats skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4" style={{ gap: 'var(--space-lg)' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="border border-[#3f3f3f] bg-[#212121] rounded-lg p-6 space-y-3">
+            <div key={i} className="border border-[#3f3f3f] bg-[#212121] rounded-lg p-4 sm:p-6 space-y-3">
               <div className="h-4 bg-[#272727] rounded w-24 animate-pulse"></div>
               <div className="h-8 bg-[#272727] rounded w-32 animate-pulse"></div>
               <div className="h-3 bg-[#272727] rounded w-16 animate-pulse"></div>
@@ -95,8 +127,8 @@ function LoadingSkeleton() {
           ))}
         </div>
 
-        {/* Table skeleton */}
-        <div className="border border-[#3f3f3f] bg-[#212121] rounded-lg p-6 space-y-4">
+        {/* Content skeleton */}
+        <div className="border border-[#3f3f3f] bg-[#212121] rounded-lg p-4 sm:p-6 space-y-4">
           <div className="h-6 bg-[#272727] rounded w-48 animate-pulse"></div>
           <div className="space-y-2">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -112,12 +144,12 @@ function LoadingSkeleton() {
 // Empty state component
 function EmptyState() {
   return (
-    <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center p-8">
-      <div className="text-center space-y-4" style={{ gap: 'var(--space-lg)' }}>
-        <div className="text-6xl">📊</div>
+    <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center p-4 sm:p-8">
+      <div className="text-center space-y-4">
+        <div className="text-5xl sm:text-6xl">📊</div>
         <div>
-          <h2 className="text-2xl font-bold text-[#f1f1f1] mb-2">No expenses found</h2>
-          <p className="text-[#aaaaaa]">
+          <h2 className="text-xl sm:text-2xl font-bold text-[#f1f1f1] mb-2">No expenses found</h2>
+          <p className="text-[#aaaaaa] text-sm sm:text-base">
             Your expense dashboard is ready. Add expenses to get started.
           </p>
         </div>
@@ -185,16 +217,16 @@ export default function Dashboard() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center p-8">
-        <div className="text-center space-y-4" style={{ gap: 'var(--space-lg)' }}>
-          <div className="text-5xl">⚠️</div>
+      <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center p-4 sm:p-8">
+        <div className="text-center space-y-4">
+          <div className="text-4xl sm:text-5xl">⚠️</div>
           <div>
-            <h2 className="text-xl font-bold text-[#f1f1f1] mb-2">Failed to load expenses</h2>
-            <p className="text-[#aaaaaa] mb-4">{error}</p>
+            <h2 className="text-lg sm:text-xl font-bold text-[#f1f1f1] mb-2">Failed to load expenses</h2>
+            <p className="text-[#aaaaaa] mb-4 text-sm sm:text-base">{error}</p>
           </div>
           <Button
             onClick={() => fetchData()}
-            className="bg-[#f1f1f1] text-[#0f0f0f] hover:bg-[#aaaaaa] transition-all duration-200"
+            className="bg-[#f1f1f1] text-[#0f0f0f] hover:bg-[#aaaaaa] transition-all h-11 px-6"
             style={{ transitionDuration: 'var(--duration-base)' }}
           >
             Try Again
@@ -233,126 +265,118 @@ export default function Dashboard() {
   const displayedMonzo = showAllMonzo ? recentMonzo : recentMonzo.slice(0, INITIAL_SHOW);
 
   return (
-    <div className="min-h-screen bg-[#0f0f0f]" style={{ padding: 'var(--space-xl)' }}>
-      <div className="max-w-7xl mx-auto" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-xl)' }}>
+    <div className="min-h-screen bg-[#0f0f0f] p-4 sm:p-6 md:p-8">
+      <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
-        <div className="border-b border-[#3f3f3f] flex justify-between items-start" style={{ paddingBottom: 'var(--space-xl)' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
-            <h1
-              className="font-bold text-[#f1f1f1] tracking-tight"
-              style={{ fontSize: 'var(--text-4xl)', lineHeight: '1.1' }}
-            >
-              Expense Reports
-            </h1>
-            <p className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-base)' }}>
-              Real-time lunch tracking & business trips · Live sync with Monzo
-            </p>
-            <div className="flex items-center" style={{ gap: 'var(--space-md)' }}>
-              <div className="flex items-center" style={{ gap: 'var(--space-sm)' }}>
+        <div className="border-b border-[#3f3f3f] pb-4 sm:pb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
+            <div className="space-y-2">
+              <h1 className="text-3xl sm:text-4xl font-bold text-[#f1f1f1] tracking-tight">
+                Expense Reports
+              </h1>
+              <p className="text-[#aaaaaa] text-sm sm:text-base">
+                Real-time lunch tracking & business trips
+                <span className="hidden sm:inline"> · Live sync with Monzo</span>
+              </p>
+              <div className="flex items-center gap-2">
                 <div
                   className={`w-2 h-2 rounded-full transition-all ${refreshing ? 'bg-[#f1f1f1] animate-pulse' : 'bg-[#717171]'}`}
                   style={{ transitionDuration: 'var(--duration-base)' }}
                   aria-label={refreshing ? 'Syncing' : 'Idle'}
                 ></div>
-                <p className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-sm)' }}>
+                <p className="text-xs sm:text-sm text-[#aaaaaa]">
                   Last updated: {lastUpdate}
                 </p>
               </div>
             </div>
-          </div>
-          <div className="relative">
-            <Button
-              onClick={() => fetchData(false)}
-              disabled={refreshing}
-              className="bg-[#f1f1f1] text-[#0f0f0f] hover:bg-[#aaaaaa] font-bold transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100"
-              style={{ transitionDuration: 'var(--duration-base)', transitionTimingFunction: 'var(--ease-out-quart)' }}
-              aria-label={refreshing ? 'Syncing with Monzo' : 'Sync with Monzo'}
-            >
-              {refreshing ? 'Syncing...' : 'Sync Monzo'}
-            </Button>
-            {syncProgress > 0 && (
-              <div
-                className="absolute -bottom-2 left-0 right-0 h-1 bg-[#3f3f3f] rounded-full overflow-hidden"
-                role="progressbar"
-                aria-valuenow={syncProgress}
-                aria-valuemin={0}
-                aria-valuemax={100}
+            <div className="relative w-full sm:w-auto">
+              <Button
+                onClick={() => fetchData(false)}
+                disabled={refreshing}
+                className="w-full sm:w-auto bg-[#f1f1f1] text-[#0f0f0f] hover:bg-[#aaaaaa] font-bold transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 h-11 px-6 text-sm sm:text-base"
+                style={{ transitionDuration: 'var(--duration-base)', transitionTimingFunction: 'var(--ease-out-quart)' }}
+                aria-label={refreshing ? 'Syncing with Monzo' : 'Sync with Monzo'}
               >
+                {refreshing ? 'Syncing...' : 'Sync Monzo'}
+              </Button>
+              {syncProgress > 0 && (
                 <div
-                  className="h-full bg-[#f1f1f1] transition-all ease-out"
-                  style={{
-                    width: `${syncProgress}%`,
-                    transitionDuration: 'var(--duration-base)'
-                  }}
-                ></div>
-              </div>
-            )}
+                  className="absolute -bottom-2 left-0 right-0 h-1 bg-[#3f3f3f] rounded-full overflow-hidden"
+                  role="progressbar"
+                  aria-valuenow={syncProgress}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                >
+                  <div
+                    className="h-full bg-[#f1f1f1] transition-all ease-out"
+                    style={{
+                      width: `${syncProgress}%`,
+                      transitionDuration: 'var(--duration-base)'
+                    }}
+                  ></div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
         {/* Stats Grid */}
-        <div
-          className="grid grid-cols-1 md:grid-cols-3 gap-4"
-          style={{ gap: 'var(--space-lg)' }}
-        >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
           <Card className="border-[#3f3f3f] bg-[#212121] group hover:border-[#717171] transition-all" style={{ transitionDuration: 'var(--duration-base)' }}>
-            <CardHeader style={{ paddingBottom: 'var(--space-md)' }}>
-              <CardDescription className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-sm)' }}>
+            <CardHeader className="pb-3">
+              <CardDescription className="text-[#aaaaaa] text-xs sm:text-sm">
                 Total Expenses
               </CardDescription>
               <CardTitle
-                className="font-bold text-[#f1f1f1] tabular-nums group-hover:scale-105 transition-transform origin-left"
+                className="text-2xl sm:text-3xl font-bold text-[#f1f1f1] tabular-nums group-hover:scale-105 transition-transform origin-left"
                 style={{
-                  fontSize: 'var(--text-3xl)',
                   transitionDuration: 'var(--duration-base)',
                   transitionTimingFunction: 'var(--ease-out-quart)'
                 }}
               >
                 £<AnimatedNumber value={data?.total || 0} />
               </CardTitle>
-              <p className="text-[#aaaaaa] tabular-nums" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-xs)' }}>
+              <p className="text-[#aaaaaa] tabular-nums text-xs sm:text-sm">
                 {data?.count} items
               </p>
             </CardHeader>
           </Card>
 
           <Card className="border-[#3f3f3f] bg-[#212121] group hover:border-[#717171] transition-all" style={{ transitionDuration: 'var(--duration-base)' }}>
-            <CardHeader style={{ paddingBottom: 'var(--space-md)' }}>
-              <CardDescription className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-sm)' }}>
+            <CardHeader className="pb-3">
+              <CardDescription className="text-[#aaaaaa] text-xs sm:text-sm">
                 Work Lunches
               </CardDescription>
               <CardTitle
-                className="font-bold text-[#f1f1f1] tabular-nums group-hover:scale-105 transition-transform origin-left"
+                className="text-2xl sm:text-3xl font-bold text-[#f1f1f1] tabular-nums group-hover:scale-105 transition-transform origin-left"
                 style={{
-                  fontSize: 'var(--text-3xl)',
                   transitionDuration: 'var(--duration-base)',
                   transitionTimingFunction: 'var(--ease-out-quart)'
                 }}
               >
                 £<AnimatedNumber value={data?.workLunches.total || 0} />
               </CardTitle>
-              <p className="text-[#aaaaaa] tabular-nums" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-xs)' }}>
+              <p className="text-[#aaaaaa] tabular-nums text-xs sm:text-sm">
                 {data?.workLunches.count} items
               </p>
             </CardHeader>
           </Card>
 
-          <Card className="border-[#3f3f3f] bg-[#212121] group hover:border-[#717171] transition-all" style={{ transitionDuration: 'var(--duration-base)' }}>
-            <CardHeader style={{ paddingBottom: 'var(--space-md)' }}>
-              <CardDescription className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-sm)' }}>
+          <Card className="border-[#3f3f3f] bg-[#212121] group hover:border-[#717171] transition-all sm:col-span-2 lg:col-span-1" style={{ transitionDuration: 'var(--duration-base)' }}>
+            <CardHeader className="pb-3">
+              <CardDescription className="text-[#aaaaaa] text-xs sm:text-sm">
                 Qatar Trip
               </CardDescription>
               <CardTitle
-                className="font-bold text-[#f1f1f1] tabular-nums group-hover:scale-105 transition-transform origin-left"
+                className="text-2xl sm:text-3xl font-bold text-[#f1f1f1] tabular-nums group-hover:scale-105 transition-transform origin-left"
                 style={{
-                  fontSize: 'var(--text-3xl)',
                   transitionDuration: 'var(--duration-base)',
                   transitionTimingFunction: 'var(--ease-out-quart)'
                 }}
               >
                 £<AnimatedNumber value={data?.qatarTrip.total || 0} />
               </CardTitle>
-              <p className="text-[#aaaaaa] tabular-nums" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-xs)' }}>
+              <p className="text-[#aaaaaa] tabular-nums text-xs sm:text-sm">
                 {data?.qatarTrip.count} items
               </p>
             </CardHeader>
@@ -360,7 +384,7 @@ export default function Dashboard() {
         </div>
 
         {/* Expense Sections with Accordions */}
-        <Accordion type="multiple" defaultValue={['work-lunches', 'qatar-trip']} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-lg)' }}>
+        <Accordion type="multiple" defaultValue={['work-lunches', 'qatar-trip']} className="space-y-3 sm:space-y-4">
 
           {/* Recent Monzo Transactions */}
           {recentMonzo.length > 0 && (
@@ -370,72 +394,79 @@ export default function Dashboard() {
               style={{ transitionDuration: 'var(--duration-base)' }}
             >
               <AccordionTrigger
-                className="hover:no-underline hover:bg-[#272727]/50 transition-colors"
-                style={{
-                  padding: 'var(--space-lg)',
-                  transitionDuration: 'var(--duration-base)'
-                }}
+                className="hover:no-underline hover:bg-[#272727]/50 transition-colors p-4 sm:p-6 min-h-[44px]"
+                style={{ transitionDuration: 'var(--duration-base)' }}
               >
                 <div className="flex items-center justify-between w-full pr-4">
-                  <div>
-                    <h2 className="font-bold text-[#f1f1f1]" style={{ fontSize: 'var(--text-2xl)' }}>
+                  <div className="text-left">
+                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
                       Recent Transactions
                     </h2>
-                    <p className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-xs)' }}>
+                    <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
                       Latest from Monzo API
                     </p>
                   </div>
-                  <div className="text-[#f1f1f1] font-bold tabular-nums">{recentMonzo.length} items</div>
+                  <div className="text-[#f1f1f1] font-bold tabular-nums text-sm sm:text-base">{recentMonzo.length}</div>
                 </div>
               </AccordionTrigger>
-              <AccordionContent style={{ padding: 'var(--space-lg)', paddingTop: 0 }}>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-[#3f3f3f]/50 hover:bg-[#272727]">
-                      <TableHead className="text-[#f1f1f1] font-bold">Date</TableHead>
-                      <TableHead className="text-[#f1f1f1] font-bold">Day</TableHead>
-                      <TableHead className="text-[#f1f1f1] font-bold">Merchant</TableHead>
-                      <TableHead className="text-[#f1f1f1] font-bold">Category</TableHead>
-                      <TableHead className="text-[#f1f1f1] font-bold">Location</TableHead>
-                      <TableHead className="text-right text-[#f1f1f1] font-bold">Amount</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {displayedMonzo.map((expense, idx) => (
-                      <TableRow
-                        key={idx}
-                        className="border-[#3f3f3f] hover:bg-[#272727] transition-colors"
-                        style={{
-                          transitionDuration: 'var(--duration-fast)',
-                          animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
-                        }}
-                      >
-                        <TableCell className="font-mono text-[#f1f1f1]" style={{ fontSize: 'var(--text-sm)' }}>
-                          {expense.date}
-                        </TableCell>
-                        <TableCell className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-sm)' }}>
-                          {expense.day}
-                        </TableCell>
-                        <TableCell className="font-medium text-[#f1f1f1]">{expense.merchant}</TableCell>
-                        <TableCell className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-sm)' }}>
-                          {expense.expenseType}
-                        </TableCell>
-                        <TableCell className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-sm)' }}>
-                          {expense.location}
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-[#f1f1f1] tabular-nums">
-                          £{expense.amount.toFixed(2)}
-                        </TableCell>
+              <AccordionContent className="p-4 sm:p-6 pt-0">
+                {/* Mobile: Card View */}
+                <div className="md:hidden space-y-3">
+                  {displayedMonzo.map((expense, idx) => (
+                    <ExpenseCard key={idx} expense={expense} />
+                  ))}
+                </div>
+
+                {/* Desktop: Table View */}
+                <div className="hidden md:block overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="border-[#3f3f3f]/50 hover:bg-[#272727]">
+                        <TableHead className="text-[#f1f1f1] font-bold">Date</TableHead>
+                        <TableHead className="text-[#f1f1f1] font-bold">Day</TableHead>
+                        <TableHead className="text-[#f1f1f1] font-bold">Merchant</TableHead>
+                        <TableHead className="text-[#f1f1f1] font-bold">Category</TableHead>
+                        <TableHead className="text-[#f1f1f1] font-bold">Location</TableHead>
+                        <TableHead className="text-right text-[#f1f1f1] font-bold">Amount</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {displayedMonzo.map((expense, idx) => (
+                        <TableRow
+                          key={idx}
+                          className="border-[#3f3f3f] hover:bg-[#272727] transition-colors"
+                          style={{
+                            transitionDuration: 'var(--duration-fast)',
+                            animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
+                          }}
+                        >
+                          <TableCell className="font-mono text-sm text-[#f1f1f1]">
+                            {expense.date}
+                          </TableCell>
+                          <TableCell className="text-[#aaaaaa] text-sm">
+                            {expense.day}
+                          </TableCell>
+                          <TableCell className="font-medium text-[#f1f1f1]">{expense.merchant}</TableCell>
+                          <TableCell className="text-[#aaaaaa] text-sm">
+                            {expense.expenseType}
+                          </TableCell>
+                          <TableCell className="text-[#aaaaaa] text-sm">
+                            {expense.location}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-[#f1f1f1] tabular-nums">
+                            £{expense.amount.toFixed(2)}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
                 {recentMonzo.length > INITIAL_SHOW && (
                   <button
                     onClick={() => setShowAllMonzo(!showAllMonzo)}
-                    className="w-full text-center text-[#f1f1f1] hover:text-[#ffffff] transition-colors"
+                    className="w-full text-center text-[#f1f1f1] hover:text-[#ffffff] transition-colors mt-4 py-3 min-h-[44px]"
                     style={{
-                      marginTop: 'var(--space-lg)',
                       fontSize: 'var(--text-sm)',
                       transitionDuration: 'var(--duration-base)'
                     }}
@@ -456,68 +487,75 @@ export default function Dashboard() {
             style={{ transitionDuration: 'var(--duration-base)' }}
           >
             <AccordionTrigger
-              className="hover:no-underline hover:bg-[#272727]/50 transition-colors"
-              style={{
-                padding: 'var(--space-lg)',
-                transitionDuration: 'var(--duration-base)'
-              }}
+              className="hover:no-underline hover:bg-[#272727]/50 transition-colors p-4 sm:p-6 min-h-[44px]"
+              style={{ transitionDuration: 'var(--duration-base)' }}
             >
               <div className="flex items-center justify-between w-full pr-4">
-                <div>
-                  <h2 className="font-bold text-[#f1f1f1]" style={{ fontSize: 'var(--text-2xl)' }}>
+                <div className="text-left">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
                     Work Lunches
                   </h2>
-                  <p className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-xs)' }}>
+                  <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
                     Office lunch expenses · Kings Cross
                   </p>
                 </div>
-                <div className="text-[#f1f1f1] font-bold tabular-nums">{workLunches.length} items</div>
+                <div className="text-[#f1f1f1] font-bold tabular-nums text-sm sm:text-base">{workLunches.length}</div>
               </div>
             </AccordionTrigger>
-            <AccordionContent style={{ padding: 'var(--space-lg)', paddingTop: 0 }}>
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-[#3f3f3f]/50 hover:bg-[#272727]">
-                    <TableHead className="text-[#f1f1f1] font-bold">Date</TableHead>
-                    <TableHead className="text-[#f1f1f1] font-bold">Day</TableHead>
-                    <TableHead className="text-[#f1f1f1] font-bold">Merchant</TableHead>
-                    <TableHead className="text-[#f1f1f1] font-bold">Location</TableHead>
-                    <TableHead className="text-right text-[#f1f1f1] font-bold">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {displayedWorkLunches.map((expense, idx) => (
-                    <TableRow
-                      key={idx}
-                      className="border-[#3f3f3f] hover:bg-[#272727] transition-colors"
-                      style={{
-                        transitionDuration: 'var(--duration-fast)',
-                        animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
-                      }}
-                    >
-                      <TableCell className="font-mono text-[#f1f1f1]" style={{ fontSize: 'var(--text-sm)' }}>
-                        {expense.date}
-                      </TableCell>
-                      <TableCell className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-sm)' }}>
-                        {expense.day}
-                      </TableCell>
-                      <TableCell className="font-medium text-[#f1f1f1]">{expense.merchant}</TableCell>
-                      <TableCell className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-sm)' }}>
-                        {expense.location}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-[#f1f1f1] tabular-nums">
-                        £{expense.amount.toFixed(2)}
-                      </TableCell>
+            <AccordionContent className="p-4 sm:p-6 pt-0">
+              {/* Mobile: Card View */}
+              <div className="md:hidden space-y-3">
+                {displayedWorkLunches.map((expense, idx) => (
+                  <ExpenseCard key={idx} expense={expense} />
+                ))}
+              </div>
+
+              {/* Desktop: Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-[#3f3f3f]/50 hover:bg-[#272727]">
+                      <TableHead className="text-[#f1f1f1] font-bold">Date</TableHead>
+                      <TableHead className="text-[#f1f1f1] font-bold">Day</TableHead>
+                      <TableHead className="text-[#f1f1f1] font-bold">Merchant</TableHead>
+                      <TableHead className="text-[#f1f1f1] font-bold">Location</TableHead>
+                      <TableHead className="text-right text-[#f1f1f1] font-bold">Amount</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {displayedWorkLunches.map((expense, idx) => (
+                      <TableRow
+                        key={idx}
+                        className="border-[#3f3f3f] hover:bg-[#272727] transition-colors"
+                        style={{
+                          transitionDuration: 'var(--duration-fast)',
+                          animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
+                        }}
+                      >
+                        <TableCell className="font-mono text-sm text-[#f1f1f1]">
+                          {expense.date}
+                        </TableCell>
+                        <TableCell className="text-[#aaaaaa] text-sm">
+                          {expense.day}
+                        </TableCell>
+                        <TableCell className="font-medium text-[#f1f1f1]">{expense.merchant}</TableCell>
+                        <TableCell className="text-[#aaaaaa] text-sm">
+                          {expense.location}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-[#f1f1f1] tabular-nums">
+                          £{expense.amount.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
               {workLunches.length > INITIAL_SHOW && (
                 <button
                   onClick={() => setShowAllWorkLunches(!showAllWorkLunches)}
-                  className="w-full text-center text-[#f1f1f1] hover:text-[#ffffff] transition-colors"
+                  className="w-full text-center text-[#f1f1f1] hover:text-[#ffffff] transition-colors mt-4 py-3 min-h-[44px]"
                   style={{
-                    marginTop: 'var(--space-lg)',
                     fontSize: 'var(--text-sm)',
                     transitionDuration: 'var(--duration-base)'
                   }}
@@ -537,72 +575,79 @@ export default function Dashboard() {
             style={{ transitionDuration: 'var(--duration-base)' }}
           >
             <AccordionTrigger
-              className="hover:no-underline hover:bg-[#272727]/50 transition-colors"
-              style={{
-                padding: 'var(--space-lg)',
-                transitionDuration: 'var(--duration-base)'
-              }}
+              className="hover:no-underline hover:bg-[#272727]/50 transition-colors p-4 sm:p-6 min-h-[44px]"
+              style={{ transitionDuration: 'var(--duration-base)' }}
             >
               <div className="flex items-center justify-between w-full pr-4">
-                <div>
-                  <h2 className="font-bold text-[#f1f1f1]" style={{ fontSize: 'var(--text-2xl)' }}>
+                <div className="text-left">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
                     Qatar Business Trip
                   </h2>
-                  <p className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-sm)', marginTop: 'var(--space-xs)' }}>
+                  <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
                     Feb 1-7, 2026 · Hotel, meals, transport
                   </p>
                 </div>
-                <div className="text-[#f1f1f1] font-bold tabular-nums">{qatarTrip.length} items</div>
+                <div className="text-[#f1f1f1] font-bold tabular-nums text-sm sm:text-base">{qatarTrip.length}</div>
               </div>
             </AccordionTrigger>
-            <AccordionContent style={{ padding: 'var(--space-lg)', paddingTop: 0 }}>
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-[#3f3f3f]/50 hover:bg-[#272727]">
-                    <TableHead className="text-[#f1f1f1] font-bold">Date</TableHead>
-                    <TableHead className="text-[#f1f1f1] font-bold">Day</TableHead>
-                    <TableHead className="text-[#f1f1f1] font-bold">Merchant</TableHead>
-                    <TableHead className="text-[#f1f1f1] font-bold">Category</TableHead>
-                    <TableHead className="text-[#f1f1f1] font-bold">Location</TableHead>
-                    <TableHead className="text-right text-[#f1f1f1] font-bold">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {displayedQatar.map((expense, idx) => (
-                    <TableRow
-                      key={idx}
-                      className="border-[#3f3f3f] hover:bg-[#272727] transition-colors"
-                      style={{
-                        transitionDuration: 'var(--duration-fast)',
-                        animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
-                      }}
-                    >
-                      <TableCell className="font-mono text-[#f1f1f1]" style={{ fontSize: 'var(--text-sm)' }}>
-                        {expense.date}
-                      </TableCell>
-                      <TableCell className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-sm)' }}>
-                        {expense.day}
-                      </TableCell>
-                      <TableCell className="font-medium text-[#f1f1f1]">{expense.merchant}</TableCell>
-                      <TableCell className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-sm)' }}>
-                        {expense.expenseType}
-                      </TableCell>
-                      <TableCell className="text-[#aaaaaa]" style={{ fontSize: 'var(--text-sm)' }}>
-                        {expense.location}
-                      </TableCell>
-                      <TableCell className="text-right font-mono text-[#f1f1f1] tabular-nums">
-                        £{expense.amount.toFixed(2)}
-                      </TableCell>
+            <AccordionContent className="p-4 sm:p-6 pt-0">
+              {/* Mobile: Card View */}
+              <div className="md:hidden space-y-3">
+                {displayedQatar.map((expense, idx) => (
+                  <ExpenseCard key={idx} expense={expense} />
+                ))}
+              </div>
+
+              {/* Desktop: Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-[#3f3f3f]/50 hover:bg-[#272727]">
+                      <TableHead className="text-[#f1f1f1] font-bold">Date</TableHead>
+                      <TableHead className="text-[#f1f1f1] font-bold">Day</TableHead>
+                      <TableHead className="text-[#f1f1f1] font-bold">Merchant</TableHead>
+                      <TableHead className="text-[#f1f1f1] font-bold">Category</TableHead>
+                      <TableHead className="text-[#f1f1f1] font-bold">Location</TableHead>
+                      <TableHead className="text-right text-[#f1f1f1] font-bold">Amount</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {displayedQatar.map((expense, idx) => (
+                      <TableRow
+                        key={idx}
+                        className="border-[#3f3f3f] hover:bg-[#272727] transition-colors"
+                        style={{
+                          transitionDuration: 'var(--duration-fast)',
+                          animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
+                        }}
+                      >
+                        <TableCell className="font-mono text-sm text-[#f1f1f1]">
+                          {expense.date}
+                        </TableCell>
+                        <TableCell className="text-[#aaaaaa] text-sm">
+                          {expense.day}
+                        </TableCell>
+                        <TableCell className="font-medium text-[#f1f1f1]">{expense.merchant}</TableCell>
+                        <TableCell className="text-[#aaaaaa] text-sm">
+                          {expense.expenseType}
+                        </TableCell>
+                        <TableCell className="text-[#aaaaaa] text-sm">
+                          {expense.location}
+                        </TableCell>
+                        <TableCell className="text-right font-mono text-[#f1f1f1] tabular-nums">
+                          £{expense.amount.toFixed(2)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+
               {qatarTrip.length > INITIAL_SHOW && (
                 <button
                   onClick={() => setShowAllQatar(!showAllQatar)}
-                  className="w-full text-center text-[#f1f1f1] hover:text-[#ffffff] transition-colors"
+                  className="w-full text-center text-[#f1f1f1] hover:text-[#ffffff] transition-colors mt-4 py-3 min-h-[44px]"
                   style={{
-                    marginTop: 'var(--space-lg)',
                     fontSize: 'var(--text-sm)',
                     transitionDuration: 'var(--duration-base)'
                   }}
