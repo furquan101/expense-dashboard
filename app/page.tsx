@@ -310,7 +310,7 @@ export default function Dashboard() {
               <Button
                 onClick={() => fetchData(false)}
                 disabled={refreshing}
-                className="w-full sm:w-auto bg-[#f1f1f1] text-[#0f0f0f] hover:bg-[#aaaaaa] font-bold transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 h-11 px-6 text-sm sm:text-base"
+                className="w-full sm:w-auto border border-[#f1f1f1] text-[#f1f1f1] hover:bg-[#f1f1f1]/10 font-medium transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 h-11 px-6 text-sm sm:text-base"
                 style={{ transitionDuration: 'var(--duration-base)', transitionTimingFunction: 'var(--ease-out-quart)' }}
                 aria-label={refreshing ? 'Syncing with Monzo' : 'Sync with Monzo'}
               >
