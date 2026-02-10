@@ -185,10 +185,11 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const includeMonzo = searchParams.get('includeMonzo') !== 'false';
+    const skipCache = searchParams.get('skipCache') === 'true';
 
-    // Check cache first
+    // Check cache first (unless skipCache is requested)
     const now = Date.now();
-    if (cachedData && (now - cachedData.timestamp) < CACHE_DURATION) {
+    if (!skipCache && cachedData && (now - cachedData.timestamp) < CACHE_DURATION) {
       return NextResponse.json({
         ...cachedData.data,
         cached: true,
