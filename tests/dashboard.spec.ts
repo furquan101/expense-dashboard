@@ -1,4 +1,4 @@
-import { test, expect, devices } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 
 const BASE_URL = 'http://localhost:3000';
 
@@ -7,7 +7,9 @@ const BASE_URL = 'http://localhost:3000';
 // ============================================
 
 test.describe('Desktop Dashboard', () => {
-  test.use({ ...devices['Desktop Chrome'] });
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1920, height: 1080 });
+  });
 
   test('should load dashboard successfully', async ({ page }) => {
     await page.goto(BASE_URL);
@@ -179,7 +181,9 @@ test.describe('Desktop Dashboard', () => {
 // ============================================
 
 test.describe('Mobile Dashboard', () => {
-  test.use({ ...devices['iPhone 12'] });
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 }); // iPhone 12 size
+  });
 
   test('should load dashboard on mobile', async ({ page }) => {
     await page.goto(BASE_URL);
@@ -329,7 +333,9 @@ test.describe('Mobile Dashboard', () => {
 // ============================================
 
 test.describe('Tablet Dashboard', () => {
-  test.use({ ...devices['iPad Pro'] });
+  test.beforeEach(async ({ page }) => {
+    await page.setViewportSize({ width: 1024, height: 1366 }); // iPad Pro size
+  });
 
   test('should load dashboard on tablet', async ({ page }) => {
     await page.goto(BASE_URL);
