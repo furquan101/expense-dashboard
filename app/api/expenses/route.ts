@@ -65,9 +65,9 @@ async function fetchLatestMonzoTransactions() {
       return [];
     }
 
-    // Fetch last 90 days to cover Dec 2025 + Jan-Feb 2026
+    // Fetch last 70 days (approximately Dec 1, 2025 onwards)
     const since = new Date();
-    since.setDate(since.getDate() - 90);
+    since.setDate(since.getDate() - 70);
 
     // Fetch with pagination (increased iterations for Jan-Feb 2026)
     const allTransactions: MonzoTransaction[] = [];
