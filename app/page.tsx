@@ -429,14 +429,14 @@ export default function Dashboard() {
                   ))}
                 </div>
 
-                {/* Desktop: Table View - Amount first */}
+                {/* Desktop: Table View */}
                 <div className="hidden md:block overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow className="border-[#3f3f3f]/50 hover:bg-[#272727]">
-                        <TableHead className="text-[#f1f1f1] font-bold">Amount</TableHead>
                         <TableHead className="text-[#f1f1f1] font-bold">Date</TableHead>
                         <TableHead className="text-[#f1f1f1] font-bold">Merchant</TableHead>
+                        <TableHead className="text-[#f1f1f1] font-bold">Amount</TableHead>
                         <TableHead className="text-[#f1f1f1] font-bold">Category</TableHead>
                         <TableHead className="text-[#f1f1f1] font-bold">Location</TableHead>
                       </TableRow>
@@ -451,13 +451,13 @@ export default function Dashboard() {
                             animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
                           }}
                         >
-                          <TableCell className="font-mono font-bold text-[#f1f1f1] tabular-nums">
-                            £{expense.amount.toFixed(2)}
-                          </TableCell>
                           <TableCell className="text-[#f1f1f1] text-sm">
                             {formatDate(expense.date, expense.day)}
                           </TableCell>
                           <TableCell className="font-medium text-[#f1f1f1]">{expense.merchant}</TableCell>
+                          <TableCell className="font-mono font-bold text-[#f1f1f1] tabular-nums">
+                            £{expense.amount.toFixed(2)}
+                          </TableCell>
                           <TableCell className="text-[#aaaaaa] text-sm">
                             {expense.expenseType}
                           </TableCell>
@@ -518,14 +518,14 @@ export default function Dashboard() {
                 ))}
               </div>
 
-              {/* Desktop: Table View - Amount first */}
+              {/* Desktop: Table View */}
               <div className="hidden md:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-[#3f3f3f]/50 hover:bg-[#272727]">
-                      <TableHead className="text-[#f1f1f1] font-bold">Amount</TableHead>
                       <TableHead className="text-[#f1f1f1] font-bold">Date</TableHead>
                       <TableHead className="text-[#f1f1f1] font-bold">Merchant</TableHead>
+                      <TableHead className="text-[#f1f1f1] font-bold">Amount</TableHead>
                       <TableHead className="text-[#f1f1f1] font-bold">Location</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -539,13 +539,13 @@ export default function Dashboard() {
                           animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
                         }}
                       >
-                        <TableCell className="font-mono font-bold text-[#f1f1f1] tabular-nums">
-                          £{expense.amount.toFixed(2)}
-                        </TableCell>
                         <TableCell className="text-[#f1f1f1] text-sm">
                           {formatDate(expense.date, expense.day)}
                         </TableCell>
                         <TableCell className="font-medium text-[#f1f1f1]">{expense.merchant}</TableCell>
+                        <TableCell className="font-mono font-bold text-[#f1f1f1] tabular-nums">
+                          £{expense.amount.toFixed(2)}
+                        </TableCell>
                         <TableCell className="text-[#aaaaaa] text-sm">
                           {expense.location}
                         </TableCell>
@@ -602,14 +602,14 @@ export default function Dashboard() {
                 ))}
               </div>
 
-              {/* Desktop: Table View - Amount first */}
+              {/* Desktop: Table View */}
               <div className="hidden md:block overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow className="border-[#3f3f3f]/50 hover:bg-[#272727]">
-                      <TableHead className="text-[#f1f1f1] font-bold">Amount</TableHead>
                       <TableHead className="text-[#f1f1f1] font-bold">Date</TableHead>
                       <TableHead className="text-[#f1f1f1] font-bold">Merchant</TableHead>
+                      <TableHead className="text-[#f1f1f1] font-bold">Amount</TableHead>
                       <TableHead className="text-[#f1f1f1] font-bold">Category</TableHead>
                       <TableHead className="text-[#f1f1f1] font-bold">Location</TableHead>
                     </TableRow>
@@ -624,13 +624,13 @@ export default function Dashboard() {
                           animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
                         }}
                       >
-                        <TableCell className="font-mono font-bold text-[#f1f1f1] tabular-nums">
-                          £{expense.amount.toFixed(2)}
-                        </TableCell>
                         <TableCell className="text-[#f1f1f1] text-sm">
                           {formatDate(expense.date, expense.day)}
                         </TableCell>
                         <TableCell className="font-medium text-[#f1f1f1]">{expense.merchant}</TableCell>
+                        <TableCell className="font-mono font-bold text-[#f1f1f1] tabular-nums">
+                          £{expense.amount.toFixed(2)}
+                        </TableCell>
                         <TableCell className="text-[#aaaaaa] text-sm">
                           {expense.expenseType}
                         </TableCell>
