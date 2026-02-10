@@ -58,39 +58,28 @@ function AnimatedNumber({ value, decimals = 2 }: { value: number; decimals?: num
 
 // Mobile card view for expenses - amount on left
 function ExpenseCard({ expense }: { expense: Expense }) {
-  const isOld = isExpenseOld(expense.date);
-
   return (
-    <div className={`border rounded-lg p-4 hover:bg-[#272727] transition-colors duration-150 ${
-      isOld
-        ? 'border-orange-500/60 bg-orange-950/20'
-        : 'border-[#3f3f3f] bg-[#212121]'
-    }`}>
+    <div className="border border-[#3f3f3f] bg-[#212121] rounded-lg p-4 hover:bg-[#272727] transition-colors duration-150">
       <div className="flex justify-between items-start mb-3">
         <div className="text-left">
-          <div className={`font-mono font-medium text-xl tabular-nums ${
-            isOld ? 'text-orange-400' : 'text-[#f1f1f1]'
-          }`}>
+          <div className="font-mono text-[#f1f1f1] font-medium text-xl tabular-nums">
             £{expense.amount.toFixed(2)}
           </div>
-          <div className={`text-xs mt-1 ${isOld ? 'text-orange-500/80' : 'text-[#aaaaaa]'}`}>
+          <div className="text-[#aaaaaa] text-xs mt-1">
             {formatDate(expense.date, expense.day)}
-            {isOld && <span className="ml-2 text-[10px]">⚠️ File on Coupa</span>}
           </div>
         </div>
         <div className="text-right">
-          <div className={`font-medium text-base ${isOld ? 'text-orange-300' : 'text-[#f1f1f1]'}`}>
-            {expense.merchant}
-          </div>
+          <div className="font-medium text-[#f1f1f1] text-base">{expense.merchant}</div>
           {expense.location && (
-            <div className={`text-xs mt-1 ${isOld ? 'text-orange-500/60' : 'text-[#aaaaaa]'}`}>
+            <div className="text-[#aaaaaa] text-xs mt-1">
               {expense.location}
             </div>
           )}
         </div>
       </div>
       {expense.expenseType && (
-        <div className={`text-xs ${isOld ? 'text-orange-500/60' : 'text-[#aaaaaa]'}`}>
+        <div className="text-[#aaaaaa] text-xs">
           {expense.expenseType}
         </div>
       )}
@@ -132,14 +121,6 @@ function LoadingSkeleton() {
       </div>
     </div>
   );
-}
-
-// Check if expense is older than 30 days (needs Coupa filing)
-function isExpenseOld(dateString: string): boolean {
-  const expenseDate = new Date(dateString);
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  return expenseDate < thirtyDaysAgo;
 }
 
 // Empty state component
@@ -299,7 +280,7 @@ export default function Dashboard() {
               <Button
                 onClick={() => fetchData(false)}
                 disabled={refreshing}
-                className="w-full sm:w-auto border border-[#f1f1f1] text-[#f1f1f1] hover:bg-[#f1f1f1]/10 font-medium transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 h-11 px-6 text-sm sm:text-base"
+                className="w-full sm:w-auto border border-[#f1f1f1] text-[#f1f1f1] hover:bg-[#f1f1f1]/10 font-medium transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 py-3 px-6 text-xs uppercase tracking-wide"
                 style={{ transitionDuration: 'var(--duration-base)', transitionTimingFunction: 'var(--ease-out-quart)' }}
                 aria-label={refreshing ? 'Syncing with Monzo' : 'Sync with Monzo'}
               >
@@ -438,30 +419,25 @@ export default function Dashboard() {
                         return (
                           <TableRow
                             key={idx}
-                            className={`transition-colors ${
-                              isOld
-                                ? 'border-orange-500/60 hover:bg-orange-950/30 bg-orange-950/10'
-                                : 'border-[#3f3f3f] hover:bg-[#272727]'
-                            }`}
+                            className="border-[#3f3f3f] hover:bg-[#272727] transition-colors"
                             style={{
                               transitionDuration: 'var(--duration-fast)',
                               animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
                             }}
                           >
-                            <TableCell className={`text-sm ${isOld ? 'text-orange-400' : 'text-[#f1f1f1]'}`}>
+                            <TableCell className={`text-sm ${isOld ? 'text-orange-500' : 'text-[#f1f1f1]'}`}>
                               {formatDate(expense.date, expense.day)}
-                              {isOld && <span className="ml-2 text-[10px]">⚠️</span>}
                             </TableCell>
-                            <TableCell className={`font-medium ${isOld ? 'text-orange-300' : 'text-[#f1f1f1]'}`}>
+                            <TableCell className={`font-medium ${isOld ? 'text-orange-500' : 'text-[#f1f1f1]'}`}>
                               {expense.merchant}
                             </TableCell>
-                            <TableCell className={`font-mono font-medium tabular-nums ${isOld ? 'text-orange-400' : 'text-[#f1f1f1]'}`}>
+                            <TableCell className={`font-mono font-medium tabular-nums ${isOld ? 'text-orange-500' : 'text-[#f1f1f1]'}`}>
                               £{expense.amount.toFixed(2)}
                             </TableCell>
-                            <TableCell className={`text-sm ${isOld ? 'text-orange-500/80' : 'text-[#aaaaaa]'}`}>
+                            <TableCell className={`text-sm ${isOld ? 'text-orange-500' : 'text-[#aaaaaa]'}`}>
                               {expense.expenseType}
                             </TableCell>
-                            <TableCell className={`text-sm ${isOld ? 'text-orange-500/60' : 'text-[#aaaaaa]'}`}>
+                            <TableCell className={`text-sm ${isOld ? 'text-orange-500' : 'text-[#aaaaaa]'}`}>
                               {expense.location}
                             </TableCell>
                           </TableRow>
@@ -528,37 +504,27 @@ export default function Dashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {displayedWorkLunches.map((expense, idx) => {
-                      const isOld = isExpenseOld(expense.date);
-                      return (
-                        <TableRow
-                          key={idx}
-                          className={`transition-colors ${
-                            isOld
-                              ? 'border-orange-500/60 hover:bg-orange-950/30 bg-orange-950/10'
-                              : 'border-[#3f3f3f] hover:bg-[#272727]'
-                          }`}
-                          style={{
-                            transitionDuration: 'var(--duration-fast)',
-                            animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
-                          }}
-                        >
-                          <TableCell className={`text-sm ${isOld ? 'text-orange-400' : 'text-[#f1f1f1]'}`}>
-                            {formatDate(expense.date, expense.day)}
-                            {isOld && <span className="ml-2 text-[10px]">⚠️</span>}
-                          </TableCell>
-                          <TableCell className={`font-medium ${isOld ? 'text-orange-300' : 'text-[#f1f1f1]'}`}>
-                            {expense.merchant}
-                          </TableCell>
-                          <TableCell className={`font-mono font-medium tabular-nums ${isOld ? 'text-orange-400' : 'text-[#f1f1f1]'}`}>
-                            £{expense.amount.toFixed(2)}
-                          </TableCell>
-                          <TableCell className={`text-sm ${isOld ? 'text-orange-500/60' : 'text-[#aaaaaa]'}`}>
-                            {expense.location}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                    {displayedWorkLunches.map((expense, idx) => (
+                      <TableRow
+                        key={idx}
+                        className="border-[#3f3f3f] hover:bg-[#272727] transition-colors"
+                        style={{
+                          transitionDuration: 'var(--duration-fast)',
+                          animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
+                        }}
+                      >
+                        <TableCell className="text-[#f1f1f1] text-sm">
+                          {formatDate(expense.date, expense.day)}
+                        </TableCell>
+                        <TableCell className="font-medium text-[#f1f1f1]">{expense.merchant}</TableCell>
+                        <TableCell className="font-mono font-medium text-[#f1f1f1] tabular-nums">
+                          £{expense.amount.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-[#aaaaaa] text-sm">
+                          {expense.location}
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>
@@ -620,40 +586,30 @@ export default function Dashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {displayedQatar.map((expense, idx) => {
-                      const isOld = isExpenseOld(expense.date);
-                      return (
-                        <TableRow
-                          key={idx}
-                          className={`transition-colors ${
-                            isOld
-                              ? 'border-orange-500/60 hover:bg-orange-950/30 bg-orange-950/10'
-                              : 'border-[#3f3f3f] hover:bg-[#272727]'
-                          }`}
-                          style={{
-                            transitionDuration: 'var(--duration-fast)',
-                            animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
-                          }}
-                        >
-                          <TableCell className={`text-sm ${isOld ? 'text-orange-400' : 'text-[#f1f1f1]'}`}>
-                            {formatDate(expense.date, expense.day)}
-                            {isOld && <span className="ml-2 text-[10px]">⚠️</span>}
-                          </TableCell>
-                          <TableCell className={`font-medium ${isOld ? 'text-orange-300' : 'text-[#f1f1f1]'}`}>
-                            {expense.merchant}
-                          </TableCell>
-                          <TableCell className={`font-mono font-medium tabular-nums ${isOld ? 'text-orange-400' : 'text-[#f1f1f1]'}`}>
-                            £{expense.amount.toFixed(2)}
-                          </TableCell>
-                          <TableCell className={`text-sm ${isOld ? 'text-orange-500/80' : 'text-[#aaaaaa]'}`}>
-                            {expense.expenseType}
-                          </TableCell>
-                          <TableCell className={`text-sm ${isOld ? 'text-orange-500/60' : 'text-[#aaaaaa]'}`}>
-                            {expense.location}
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })}
+                    {displayedQatar.map((expense, idx) => (
+                      <TableRow
+                        key={idx}
+                        className="border-[#3f3f3f] hover:bg-[#272727] transition-colors"
+                        style={{
+                          transitionDuration: 'var(--duration-fast)',
+                          animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
+                        }}
+                      >
+                        <TableCell className="text-[#f1f1f1] text-sm">
+                          {formatDate(expense.date, expense.day)}
+                        </TableCell>
+                        <TableCell className="font-medium text-[#f1f1f1]">{expense.merchant}</TableCell>
+                        <TableCell className="font-mono font-medium text-[#f1f1f1] tabular-nums">
+                          £{expense.amount.toFixed(2)}
+                        </TableCell>
+                        <TableCell className="text-[#aaaaaa] text-sm">
+                          {expense.expenseType}
+                        </TableCell>
+                        <TableCell className="text-[#aaaaaa] text-sm">
+                          {expense.location}
+                        </TableCell>
+                      </TableRow>
+                    ))}
                   </TableBody>
                 </Table>
               </div>
