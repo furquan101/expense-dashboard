@@ -116,10 +116,19 @@ export async function GET() {
     const passing = filtered.filter((t: { filter: { pass: boolean }}) => t.filter.pass);
     const dec16Transactions = filtered.filter((t: { date: string }) => t.date === '2025-12-16');
 
+    const dates = filtered.map((t: { date: string }) => t.date);
+    const uniqueDates = [...new Set(dates)].sort();
+
     return NextResponse.json({
       sinceDate: since.toISOString(),
       totalTransactions: transactions.length,
       passingFilters: passing.length,
+      dateRange: {
+        earliest: uniqueDates[uniqueDates.length - 1],
+        latest: uniqueDates[0],
+        uniqueDates: uniqueDates.length,
+        allDates: uniqueDates,
+      },
       samplePassing: passing.slice(0, 10),
       sampleFailing: filtered.filter((t: { filter: { pass: boolean }}) => !t.filter.pass).slice(0, 10),
       dec16Count: dec16Transactions.length,
