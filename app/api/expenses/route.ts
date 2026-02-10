@@ -65,14 +65,13 @@ async function fetchLatestMonzoTransactions() {
       return [];
     }
 
-    // Fetch last 60 days to get more transactions
-    const since = new Date();
-    since.setDate(since.getDate() - 60);
+    // Fetch all transactions from January 1, 2026 onwards
+    const since = new Date('2026-01-01T00:00:00Z');
 
-    // Fetch with pagination
+    // Fetch with pagination (increased iterations for Jan-Feb 2026)
     const allTransactions: MonzoTransaction[] = [];
     let before = '';
-    const maxIterations = 5;
+    const maxIterations = 10;
     let iteration = 0;
 
     while (iteration < maxIterations) {
@@ -174,6 +173,9 @@ async function fetchLatestMonzoTransactions() {
     return [];
   }
 }
+
+// Cache responses for 5 minutes to avoid fetching Monzo on every request
+export const revalidate = 300;
 
 export async function GET(request: Request) {
   try {
