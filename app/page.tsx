@@ -92,7 +92,7 @@ function ExpenseCard({ expense }: { expense: Expense }) {
     <div className="border border-[#3f3f3f] bg-[#212121] rounded-lg p-4 hover:bg-[#272727] transition-colors duration-150">
       <div className="flex justify-between items-start mb-3">
         <div className="text-left">
-          <div className="font-mono text-[#f1f1f1] font-bold text-xl tabular-nums">
+          <div className="font-mono text-[#f1f1f1] font-medium text-xl tabular-nums">
             £{expense.amount.toFixed(2)}
           </div>
           <div className="text-[#aaaaaa] text-xs mt-1">
@@ -460,7 +460,7 @@ export default function Dashboard() {
                             {formatDate(expense.date, expense.day)}
                           </TableCell>
                           <TableCell className="font-medium text-[#f1f1f1]">{expense.merchant}</TableCell>
-                          <TableCell className="font-mono font-bold text-[#f1f1f1] tabular-nums">
+                          <TableCell className="font-mono font-medium text-[#f1f1f1] tabular-nums">
                             £{expense.amount.toFixed(2)}
                           </TableCell>
                           <TableCell className="text-[#aaaaaa] text-sm">
@@ -548,7 +548,7 @@ export default function Dashboard() {
                           {formatDate(expense.date, expense.day)}
                         </TableCell>
                         <TableCell className="font-medium text-[#f1f1f1]">{expense.merchant}</TableCell>
-                        <TableCell className="font-mono font-bold text-[#f1f1f1] tabular-nums">
+                        <TableCell className="font-mono font-medium text-[#f1f1f1] tabular-nums">
                           £{expense.amount.toFixed(2)}
                         </TableCell>
                         <TableCell className="text-[#aaaaaa] text-sm">
@@ -633,7 +633,7 @@ export default function Dashboard() {
                           {formatDate(expense.date, expense.day)}
                         </TableCell>
                         <TableCell className="font-medium text-[#f1f1f1]">{expense.merchant}</TableCell>
-                        <TableCell className="font-mono font-bold text-[#f1f1f1] tabular-nums">
+                        <TableCell className="font-mono font-medium text-[#f1f1f1] tabular-nums">
                           £{expense.amount.toFixed(2)}
                         </TableCell>
                         <TableCell className="text-[#aaaaaa] text-sm">
