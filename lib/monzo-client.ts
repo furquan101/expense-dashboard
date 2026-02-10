@@ -42,8 +42,8 @@ export function isLunchExpense(txn: MonzoTransaction): boolean {
   const day = date.getDay();
   const isWorkDay = day >= 1 && day <= 4; // Mon-Thu
 
-  // Food categories only
-  const isFoodCategory = ['eating_out'].includes(txn.category);
+  // Food categories - include groceries as many lunch places get miscategorized
+  const isFoodCategory = ['eating_out', 'groceries'].includes(txn.category);
 
   return isWorkDay && isKingsX && isFoodCategory;
 }
