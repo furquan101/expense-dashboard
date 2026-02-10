@@ -423,7 +423,7 @@ export default function Dashboard() {
                   </p>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="p-4 sm:p-6 pt-0">
+              <AccordionContent className="px-4 sm:px-6 pb-4 sm:pb-6">
                 {/* Mobile: Card View */}
                 <div className="md:hidden space-y-3">
                   {displayedMonzo.map((expense, idx) => (
@@ -509,7 +509,7 @@ export default function Dashboard() {
                 </p>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="p-4 sm:p-6 pt-0">
+            <AccordionContent className="px-4 sm:px-6 pb-4 sm:pb-6">
               {/* Mobile: Card View */}
               <div className="md:hidden space-y-3">
                 {displayedWorkLunches.map((expense, idx) => (
@@ -590,7 +590,7 @@ export default function Dashboard() {
                 </p>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="p-4 sm:p-6 pt-0">
+            <AccordionContent className="px-4 sm:px-6 pb-4 sm:pb-6">
               {/* Mobile: Card View */}
               <div className="md:hidden space-y-3">
                 {displayedQatar.map((expense, idx) => (
