@@ -174,13 +174,27 @@ async function fetchLatestMonzoTransactions() {
   }
 }
 
-// Cache responses for 5 minutes to avoid fetching Monzo on every request
-export const revalidate = 300;
+// In-memory cache to avoid fetching Monzo on every request
+let cachedData: {
+  data: any;
+  timestamp: number;
+} | null = null;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const includeMonzo = searchParams.get('includeMonzo') !== 'false';
+
+    // Check cache first
+    const now = Date.now();
+    if (cachedData && (now - cachedData.timestamp) < CACHE_DURATION) {
+      return NextResponse.json({
+        ...cachedData.data,
+        cached: true,
+        cacheAge: Math.floor((now - cachedData.timestamp) / 1000),
+      });
+    }
 
     const expenses: Expense[] = [];
     let workLunchesTotal = 0;
@@ -281,7 +295,7 @@ export async function GET(request: Request) {
 
     const total = workLunchesTotal + qatarTripTotal + newMonzoTotal;
 
-    return NextResponse.json({
+    const responseData = {
       expenses,
       total: parseFloat(total.toFixed(2)),
       count: expenses.length,
@@ -297,8 +311,17 @@ export async function GET(request: Request) {
         total: parseFloat(newMonzoTotal.toFixed(2)),
         count: newMonzoCount
       },
-      lastUpdated: new Date().toISOString()
-    });
+      lastUpdated: new Date().toISOString(),
+      cached: false,
+    };
+
+    // Update cache
+    cachedData = {
+      data: responseData,
+      timestamp: Date.now(),
+    };
+
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error('Error reading expenses:', error);
     return NextResponse.json(
