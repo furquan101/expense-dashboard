@@ -113,9 +113,9 @@ export async function GET() {
       return NextResponse.json({ error: 'No Monzo token configured' }, { status: 401 });
     }
 
-    // Fetch last 14 days of transactions (to avoid verification_required)
+    // Fetch last 30 days of transactions
     const since = new Date();
-    since.setDate(since.getDate() - 14);
+    since.setDate(since.getDate() - 30);
 
     const transactions = await fetchMonzoTransactions(accessToken, since);
 

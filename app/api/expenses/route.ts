@@ -65,9 +65,9 @@ async function fetchLatestMonzoTransactions() {
       return [];
     }
 
-    // Fetch last 14 days (to avoid verification_required errors)
+    // Fetch last 30 days
     const since = new Date();
-    since.setDate(since.getDate() - 14);
+    since.setDate(since.getDate() - 30);
 
     // Fetch with pagination
     const allTransactions: MonzoTransaction[] = [];
