@@ -270,6 +270,11 @@ export default function Dashboard() {
     return e.date > '2026-02-07';
   }) || [];
 
+  // Calculate totals for each section
+  const workLunchesTotal = workLunches.reduce((sum, e) => sum + e.amount, 0);
+  const qatarTripTotal = qatarTrip.reduce((sum, e) => sum + e.amount, 0);
+  const recentMonzoTotal = recentMonzo.reduce((sum, e) => sum + e.amount, 0);
+
   // Show limited items
   const INITIAL_SHOW = 5;
   const displayedWorkLunches = showAllWorkLunches ? workLunches : workLunches.slice(0, INITIAL_SHOW);
@@ -415,7 +420,7 @@ export default function Dashboard() {
                       Recent Transactions
                     </h2>
                     <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
-                      Latest from Monzo API
+                      Latest from Monzo API · £{recentMonzoTotal.toFixed(2)}
                     </p>
                   </div>
                   <div className="text-[#f1f1f1] font-bold tabular-nums text-sm sm:text-base">{recentMonzo.length}</div>
@@ -504,7 +509,7 @@ export default function Dashboard() {
                     Work Lunches
                   </h2>
                   <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
-                    Office lunch expenses · Kings Cross
+                    Kings Cross · £{workLunchesTotal.toFixed(2)}
                   </p>
                 </div>
                 <div className="text-[#f1f1f1] font-bold tabular-nums text-sm sm:text-base">{workLunches.length}</div>
@@ -588,7 +593,7 @@ export default function Dashboard() {
                     Qatar Business Trip
                   </h2>
                   <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
-                    Feb 1-7, 2026 · Hotel, meals, transport
+                    Feb 1-7, 2026 · £{qatarTripTotal.toFixed(2)}
                   </p>
                 </div>
                 <div className="text-[#f1f1f1] font-bold tabular-nums text-sm sm:text-base">{qatarTrip.length}</div>
