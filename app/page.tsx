@@ -5,39 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import type { Expense, ExpenseSummary } from '@/lib/types';
 
-interface Expense {
-  date: string;
-  day: string;
-  merchant: string;
-  amount: number;
-  currency: string;
-  category: string;
-  expenseType: string;
-  purpose: string;
-  location: string;
-  receiptAttached: string;
-  notes: string;
-}
-
-interface ExpenseData {
-  expenses: Expense[];
-  total: number;
-  count: number;
-  workLunches: {
-    total: number;
-    count: number;
-  };
-  qatarTrip: {
-    total: number;
-    count: number;
-  };
-  newMonzo?: {
-    total: number;
-    count: number;
-  };
-  lastUpdated: string;
-}
+type ExpenseData = ExpenseSummary;
 
 // Format date to readable format: "Mon, 3 Feb"
 function formatDate(dateString: string, dayString: string): string {
