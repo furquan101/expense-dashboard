@@ -415,7 +415,6 @@ export default function Dashboard() {
                     </TableHeader>
                     <TableBody>
                       {displayedMonzo.map((expense, idx) => {
-                        const isOld = isExpenseOld(expense.date);
                         return (
                           <TableRow
                             key={idx}
@@ -425,19 +424,19 @@ export default function Dashboard() {
                               animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
                             }}
                           >
-                            <TableCell className={`text-sm ${isOld ? 'text-orange-500' : 'text-[#f1f1f1]'}`}>
+                            <TableCell className="text-sm text-[#f1f1f1]">
                               {formatDate(expense.date, expense.day)}
                             </TableCell>
-                            <TableCell className={`font-medium ${isOld ? 'text-orange-500' : 'text-[#f1f1f1]'}`}>
+                            <TableCell className="font-medium text-[#f1f1f1]">
                               {expense.merchant}
                             </TableCell>
-                            <TableCell className={`font-mono font-medium tabular-nums ${isOld ? 'text-orange-500' : 'text-[#f1f1f1]'}`}>
+                            <TableCell className="font-mono font-medium tabular-nums text-[#f1f1f1]">
                               £{expense.amount.toFixed(2)}
                             </TableCell>
-                            <TableCell className={`text-sm ${isOld ? 'text-orange-500' : 'text-[#aaaaaa]'}`}>
+                            <TableCell className="text-sm text-[#aaaaaa]">
                               {expense.expenseType}
                             </TableCell>
-                            <TableCell className={`text-sm ${isOld ? 'text-orange-500' : 'text-[#aaaaaa]'}`}>
+                            <TableCell className="text-sm text-[#aaaaaa]">
                               {expense.location}
                             </TableCell>
                           </TableRow>
