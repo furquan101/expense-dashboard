@@ -256,7 +256,7 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="border-b border-[#3f3f3f] pb-4 sm:pb-6">
-          <div className="flex flex-col items-center text-center gap-4">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
             <div className="space-y-2">
               <h1 className="text-3xl sm:text-4xl font-bold text-[#f1f1f1] tracking-tight">
                 Expense Reports
@@ -265,7 +265,7 @@ export default function Dashboard() {
                 Real-time lunch tracking & business trips
                 <span className="hidden sm:inline"> · Live sync with Monzo</span>
               </p>
-              <div className="flex items-center justify-center gap-2">
+              <div className="flex items-center gap-2">
                 <div
                   className={`w-2 h-2 rounded-full transition-all ${refreshing ? 'bg-[#f1f1f1] animate-pulse' : 'bg-[#717171]'}`}
                   style={{ transitionDuration: 'var(--duration-base)' }}
@@ -276,11 +276,11 @@ export default function Dashboard() {
                 </p>
               </div>
             </div>
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <Button
                 onClick={() => fetchData(false)}
                 disabled={refreshing}
-                className="bg-transparent border border-[#f1f1f1] text-[#f1f1f1] hover:bg-[#f1f1f1]/10 font-medium transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 py-3 px-6 text-xs uppercase tracking-wide"
+                className="w-full sm:w-auto bg-transparent border border-[#f1f1f1] text-[#f1f1f1] hover:bg-[#f1f1f1]/10 font-medium transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 py-3 px-6 text-xs uppercase tracking-wide"
                 style={{ transitionDuration: 'var(--duration-base)', transitionTimingFunction: 'var(--ease-out-quart)' }}
                 aria-label={refreshing ? 'Syncing with Monzo' : 'Sync with Monzo'}
               >
