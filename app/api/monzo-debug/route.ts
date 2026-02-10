@@ -68,18 +68,41 @@ export async function GET() {
     }
 
     const since = new Date('2025-12-01T00:00:00Z');
-    const url = `https://api.monzo.com/transactions?account_id=acc_0000AlrlMJPONVy6d8Mbzu&since=${since.toISOString()}&limit=100&expand[]=merchant`;
 
-    const response = await fetch(url, {
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-      cache: 'no-store'
-    });
+    // Fetch with pagination like the main endpoint
+    const allTransactions: MonzoTransaction[] = [];
+    let before = '';
+    const maxIterations = 10;
+    let iteration = 0;
 
-    const status = response.status;
-    const data = await response.json();
-    const transactions = data.transactions || [];
+    while (iteration < maxIterations) {
+      const url = before
+        ? `https://api.monzo.com/transactions?account_id=acc_0000AlrlMJPONVy6d8Mbzu&since=${since.toISOString()}&before=${before}&limit=100&expand[]=merchant`
+        : `https://api.monzo.com/transactions?account_id=acc_0000AlrlMJPONVy6d8Mbzu&since=${since.toISOString()}&limit=100&expand[]=merchant`;
+
+      const response = await fetch(url, {
+        headers: {
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        cache: 'no-store'
+      });
+
+      if (!response.ok) break;
+
+      const data = await response.json();
+      const transactions = data.transactions || [];
+
+      if (transactions.length === 0) break;
+
+      allTransactions.push(...transactions);
+
+      if (transactions.length < 100) break;
+
+      before = transactions[transactions.length - 1].created;
+      iteration++;
+    }
+
+    const transactions = allTransactions;
 
     const filtered = transactions.map((txn: MonzoTransaction) => ({
       date: txn.created.split('T')[0],
@@ -91,14 +114,16 @@ export async function GET() {
     }));
 
     const passing = filtered.filter((t: { filter: { pass: boolean }}) => t.filter.pass);
+    const dec16Transactions = filtered.filter((t: { date: string }) => t.date === '2025-12-16');
 
     return NextResponse.json({
-      status,
       sinceDate: since.toISOString(),
       totalTransactions: transactions.length,
       passingFilters: passing.length,
-      samplePassing: passing.slice(0, 5),
+      samplePassing: passing.slice(0, 10),
       sampleFailing: filtered.filter((t: { filter: { pass: boolean }}) => !t.filter.pass).slice(0, 10),
+      dec16Count: dec16Transactions.length,
+      dec16Transactions: dec16Transactions,
     });
   } catch (error) {
     return NextResponse.json({
