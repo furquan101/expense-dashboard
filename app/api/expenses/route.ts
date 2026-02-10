@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import type { Expense, ExpenseSummary } from '@/lib/types';
 import { fetchLunchExpenses } from '@/lib/monzo-client';
+import { getValidAccessToken } from '@/lib/monzo-auth';
 
 // In-memory cache to avoid fetching Monzo on every request
 let cachedData: {
@@ -136,9 +137,9 @@ export async function GET(request: Request) {
     let newMonzoTotal = 0;
 
     if (includeMonzo) {
-      const accessToken = process.env.MONZO_ACCESS_TOKEN;
-
-      if (accessToken) {
+      try {
+        // Get valid access token (will auto-refresh if expired)
+        const accessToken = await getValidAccessToken();
         const monzoExpenses = await fetchLunchExpenses(accessToken, 60);
 
         // Filter out duplicates (transactions already in CSV)
@@ -162,8 +163,9 @@ export async function GET(request: Request) {
         newMonzoTotal = recentMonzoExpenses.reduce((sum, e) => sum + e.amount, 0);
 
         expenses.push(...recentMonzoExpenses);
-      } else {
-        console.log('No Monzo token configured');
+      } catch (error) {
+        console.error('Failed to fetch Monzo transactions:', error);
+        // Continue without Monzo data
       }
     }
 

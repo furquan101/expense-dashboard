@@ -72,7 +72,7 @@ export function convertToExpense(txn: MonzoTransaction): Expense {
 
 /**
  * Fetches transactions from Monzo API with pagination
- * @param accessToken - Monzo API access token
+ * @param accessToken - Monzo API access token (will auto-refresh if expired)
  * @param daysSince - Number of days to look back (max 90 due to SCA)
  * @returns Array of Monzo transactions
  */
