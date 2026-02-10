@@ -67,7 +67,9 @@ export async function GET() {
       return NextResponse.json({ error: 'No token' });
     }
 
-    const since = new Date('2025-12-01T00:00:00Z');
+    // Use relative date (90 days) instead of absolute date
+    const since = new Date();
+    since.setDate(since.getDate() - 90);
 
     // Fetch with pagination like the main endpoint
     const allTransactions: MonzoTransaction[] = [];
