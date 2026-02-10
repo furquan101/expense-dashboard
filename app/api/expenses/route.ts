@@ -204,8 +204,8 @@ export async function GET(request: Request) {
     let workLunchesCount = 0;
     let qatarTripCount = 0;
 
-    // Try to load CSV if available (local development)
-    const csvPath = process.env.CSV_PATH || path.join(process.env.HOME || '', 'Downloads', 'coupa_expenses.csv');
+    // Try to load CSV from project data directory (works on both local and Vercel)
+    const csvPath = process.env.CSV_PATH || path.join(process.cwd(), 'data', 'expenses.csv');
 
     if (fs.existsSync(csvPath)) {
       const csvContent = fs.readFileSync(csvPath, 'utf-8');

@@ -1,0 +1,65 @@
+Date,Day,Merchant/Vendor,Amount,Currency,Category,Expense Type,Business Purpose,Location,Receipt Attached,Notes
+━━━ WORK LUNCHES (Dec 2025 - Jan 2026) ━━━,,,,,,,,,,
+2025-12-15,MON,Deliveroo,21.76,GBP,Meals & Entertainment,Lunch,Working lunch - Kings Cross office,"London, UK",No,Office lunch delivery
+2025-12-16,TUE,Tortilla,15.80,GBP,Meals & Entertainment,Lunch,Working lunch - Kings Cross office,"London, UK",No,Office lunch
+2025-12-16,TUE,Wasabi,2.95,GBP,Meals & Entertainment,Lunch,Working lunch - Kings Cross office,"London, UK",No,Office lunch
+2025-12-17,WED,Efes Gourmet,37.90,GBP,Meals & Entertainment,Lunch,Working lunch - Kings Cross office,"London E1, UK",No,Office lunch
+2026-01-08,WED,Tortilla Pancras Square,16.30,GBP,Meals & Entertainment,Lunch,Working lunch - Kings Cross office,"Kings Cross, London, UK",No,Office lunch
+2026-01-08,WED,Gails Kings Cross,4.70,GBP,Meals & Entertainment,Lunch,Working lunch - Kings Cross office,"Kings Cross, London, UK",No,Office lunch
+2026-01-08,WED,Deliveroo,19.78,GBP,Meals & Entertainment,Lunch,Working lunch - Kings Cross office,"London, UK",No,Office lunch delivery
+2026-01-13,MON,Wasabi Pancras Square,16.95,GBP,Meals & Entertainment,Lunch,Working lunch - Kings Cross office,"Kings Cross, London, UK",No,Office lunch
+2026-01-14,TUE,East Bakery LT,4.70,GBP,Meals & Entertainment,Lunch,Working lunch - Kings Cross office,"London, UK",No,Office lunch
+2026-01-14,TUE,Coqfighter,17.38,GBP,Meals & Entertainment,Lunch,Working lunch - Kings Cross office,"London, UK",No,Office lunch
+2026-01-20,MON,Shake Shack - SP,20.50,GBP,Meals & Entertainment,Lunch,Working lunch - Kings Cross office,"London, UK",No,Office lunch
+2026-01-22,WED,Shake Shack - SP,17.05,GBP,Meals & Entertainment,Lunch,Working lunch - Kings Cross office,"London, UK",No,Office lunch
+,,>>> WORK LUNCHES SUBTOTAL (12 items),195.77,GBP,,,,,,
+,,,,,,,,,,
+"━━━ QATAR BUSINESS TRIP (Feb 1-7, 2026) ━━━",,,,,,,,,,
+2026-02-01,SAT,Transport for London,4.80,GBP,Transportation,Local Transport,Qatar business trip - travel to airport,"London, UK",No,Travel charge for trip to airport
+2026-02-01,SAT,Boots,33.29,GBP,Travel Expenses,Travel Supplies,Qatar business trip - travel essentials,"Basildon, UK",No,Travel toiletries and supplies for Qatar trip
+2026-02-01,SAT,ATM Withdrawal,30.00,GBP,Cash Advance,Cash,Qatar business trip - cash for incidentals,"Basildon, UK",No,Cash withdrawal for Qatar trip expenses
+2026-02-01,SAT,MiPermit,0.75,GBP,Transportation,Parking,Qatar business trip - airport parking,"Chippenham, UK",No,Parking fee
+2026-02-01,SAT,Greggs,1.45,GBP,Meals & Entertainment,Meals,Qatar business trip - breakfast/snack en route to airport,"Basildon, UK",No,Breakfast/snack at Basildon
+2026-02-01,SAT,Home Bargains,8.07,GBP,Travel Expenses,Travel Supplies,Qatar business trip - travel supplies,"Basildon, UK",No,Travel supplies and snacks for trip
+2026-02-01,SAT,Yo Heathrow T4,3.75,GBP,Meals & Entertainment,Meals,Qatar business trip - meal at Heathrow,"London, UK",No,Food at Heathrow Terminal 4
+2026-02-01,SAT,1976 Restaurant,23.00,GBP,Meals & Entertainment,Meals,Qatar business trip - meal,"London, UK",No,Meal before departure
+2026-02-02,SUN,Delta Hotel Marriott Doha,1287.74,GBP,Lodging,Hotel,Qatar business trip - accommodation,"Doha, Qatar",No,Hotel accommodation for Qatar business trip Feb 2-7
+2026-02-02,SUN,Mcdonalds Abu Dhabi,5.78,GBP,Meals & Entertainment,Meals,Qatar business trip - meal,"Abu Dhabi, UAE",No,Meal during travel
+2026-02-02,SUN,Mtm Wmqha Hwa Byrwt,4.01,GBP,Meals & Entertainment,Meals,Qatar business trip - meal,"Doha, Qatar",No,Meal in Qatar
+2026-02-02,SUN,Mtm Wmqha Hwa Byrwt,8.03,GBP,Meals & Entertainment,Meals,Qatar business trip - meal,"Doha, Qatar",No,Meal in Qatar
+2026-02-02,SUN,Spectrum Solution,32.11,GBP,Travel Expenses,Travel Services,Qatar business trip - travel service,"Doha, Qatar",No,Travel expense (SIM/transport/service)
+2026-02-02,SUN,Lulu Express,0.75,GBP,Meals & Entertainment,Meals,Qatar business trip - snacks,"Doha, Qatar",No,Convenience store snacks
+2026-02-02,SUN,Hundred Coffee,5.82,GBP,Meals & Entertainment,Meals,Qatar business trip - coffee,"Doha, Qatar",No,Coffee in Qatar
+2026-02-02,SUN,Hundred Coffee,7.22,GBP,Meals & Entertainment,Meals,Qatar business trip - coffee,"Doha, Qatar",No,Coffee in Qatar
+2026-02-03,MON,Hundred Coffee,5.85,GBP,Meals & Entertainment,Meals,Qatar business trip - meals,"Doha, Qatar",No,Coffee during Qatar business trip
+2026-02-03,MON,Mtm Wmqha Hwa Byrwt Restaurant,15.53,GBP,Meals & Entertainment,Meals,Qatar business trip - meals,"Doha, Qatar",No,Lunch during Qatar business trip
+2026-02-03,MON,Hundred Coffee,5.65,GBP,Meals & Entertainment,Meals,Qatar business trip - meals,"Doha, Qatar",No,Coffee during Qatar business trip
+2026-02-03,MON,Steak Town,98.23,GBP,Meals & Entertainment,Meals,Qatar business trip - meals,"Bin Mahmoud, Qatar",No,Dinner during Qatar business trip
+2026-02-04,WED,Carrefour,4.00,GBP,Meals & Entertainment,Meals,Qatar business trip - groceries/snacks,"Doha, Qatar",No,Supermarket purchases
+2026-02-04,WED,Haagen Dazs - Aida Tra,4.00,GBP,Meals & Entertainment,Meals,Qatar business trip - dessert,"Doha, Qatar",No,Dessert
+2026-02-04,WED,Go Ssip Cafe,4.00,GBP,Meals & Entertainment,Meals,Qatar business trip - cafe,"Doha, Qatar",No,Cafe
+2026-02-04,WED,Go Crispy Restaurant,11.00,GBP,Meals & Entertainment,Meals,Qatar business trip - meal,"Doha, Qatar",No,Restaurant meal
+2026-02-04,WED,Hundred Coffee,6.00,GBP,Meals & Entertainment,Meals,Qatar business trip - coffee,"Doha, Qatar",No,Coffee
+2026-02-04,WED,Woqod - Al Dafna Sidra,2.00,GBP,Transportation,Fuel,Qatar business trip - fuel,"Doha, Qatar",No,Gas station
+2026-02-05,THU,Ramen Restaurant,34.00,GBP,Meals & Entertainment,Meals,Qatar business trip - meal,"Doha, Qatar",No,Restaurant meal
+2026-02-05,THU,Maareb Centre For Yeme,21.00,GBP,Travel Expenses,Shopping,Qatar business trip - shopping,"Doha, Qatar",No,Shopping center
+2026-02-05,THU,Private Engineering Of,4.00,GBP,Travel Expenses,Utilities,Qatar business trip - service,"Doha, Qatar",No,Utility/service charge
+2026-02-05,THU,Private Engineering Of,12.00,GBP,Travel Expenses,Utilities,Qatar business trip - service,"Doha, Qatar",No,Utility/service charge
+2026-02-05,THU,Private Engineering Of,7.00,GBP,Travel Expenses,Utilities,Qatar business trip - service,"Doha, Qatar",No,Utility/service charge
+2026-02-05,THU,Hundred Coffee,5.00,GBP,Meals & Entertainment,Meals,Qatar business trip - coffee,"Doha, Qatar",No,Coffee
+2026-02-05,THU,Alzouzou Restaurant An,27.00,GBP,Meals & Entertainment,Meals,Qatar business trip - meal,"Doha, Qatar",No,Restaurant meal
+2026-02-05,THU,Hundred Coffee,6.00,GBP,Meals & Entertainment,Meals,Qatar business trip - coffee,"Doha, Qatar",No,Coffee
+2026-02-05,THU,Woqod - Al Dafna Sidra,2.00,GBP,Transportation,Fuel,Qatar business trip - fuel,"Doha, Qatar",No,Gas station
+2026-02-06,FRI,Parseh Restaurant,31.00,GBP,Meals & Entertainment,Meals,Qatar business trip - meal,"Doha, Qatar",No,Restaurant meal
+2026-02-06,FRI,Blnk Cafe,6.00,GBP,Meals & Entertainment,Meals,Qatar business trip - cafe,"Doha, Qatar",No,Cafe
+2026-02-06,FRI,Karafirin Restaurant,10.00,GBP,Meals & Entertainment,Meals,Qatar business trip - meal,"Doha, Qatar",No,Restaurant meal
+2026-02-06,FRI,Mia Ticketing,11.00,GBP,Transportation,Travel,Qatar business trip - ticketing,"Doha, Qatar",No,Travel ticketing
+2026-02-06,FRI,Coldstone Kiosk Dcc,5.00,GBP,Meals & Entertainment,Meals,Qatar business trip - dessert,"Doha, Qatar",No,Ice cream
+2026-02-06,FRI,Woqod - Al Dafna Sidra,2.00,GBP,Transportation,Fuel,Qatar business trip - fuel,"Doha, Qatar",No,Gas station
+2026-02-07,SAT,Costa Coffee,11.00,GBP,Meals & Entertainment,Meals,Qatar business trip - coffee,"Doha, Qatar",No,Coffee
+2026-02-07,SAT,Mohammed Rasool Khoory,36.00,GBP,Travel Expenses,Shopping,Qatar business trip - shopping,"Abu Dhabi, UAE",No,Shopping
+2026-02-07,SAT,Brioche Doree,7.00,GBP,Meals & Entertainment,Meals,Qatar business trip - meal,"Doha, Qatar",No,Bakery/cafe
+2026-02-07,SAT,Qdf F And B,12.00,GBP,Meals & Entertainment,Meals,Qatar business trip - meal,"Doha, Qatar",No,Restaurant meal
+,,>>> QATAR TRIP SUBTOTAL (45 items),1861.83,GBP,,,,,,
+,,,,,,,,,,
+,,═══ GRAND TOTAL (57 items) ═══,2057.60,GBP,,,,,,
