@@ -256,54 +256,29 @@ export default function Dashboard() {
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
         {/* Header */}
         <div className="border-b border-[#3f3f3f] pb-4 sm:pb-6">
-          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
-            <div className="space-y-2">
-              <h1 className="text-3xl sm:text-4xl font-bold text-[#f1f1f1] tracking-tight">
-                Expense Reports
-              </h1>
-              <p className="text-[#aaaaaa] text-sm sm:text-base">
-                Real-time lunch tracking & business trips
-                <span className="hidden sm:inline"> · Live sync with Monzo</span>
+          <div className="space-y-2">
+            <h1 className="text-3xl sm:text-4xl font-bold text-[#f1f1f1] tracking-tight">
+              Expense Reports
+            </h1>
+            <p className="text-[#aaaaaa] text-sm sm:text-base">
+              Real-time lunch tracking & business trips
+              <span className="hidden sm:inline"> · Live sync with Monzo</span>
+            </p>
+            <button
+              onClick={() => fetchData(false)}
+              disabled={refreshing}
+              className="flex items-center gap-2 group cursor-pointer disabled:cursor-default"
+              aria-label={refreshing ? 'Syncing with Monzo' : 'Click to refresh'}
+            >
+              <div
+                className={`w-2 h-2 rounded-full transition-all ${refreshing ? 'bg-[#f1f1f1] animate-pulse' : 'bg-[#717171] group-hover:bg-[#f1f1f1]'}`}
+                style={{ transitionDuration: 'var(--duration-base)' }}
+                aria-label={refreshing ? 'Syncing' : 'Idle'}
+              ></div>
+              <p className="text-xs sm:text-sm text-[#aaaaaa] group-hover:text-[#f1f1f1] transition-colors" style={{ transitionDuration: 'var(--duration-base)' }}>
+                Last updated: {lastUpdate}
               </p>
-              <div className="flex items-center gap-2">
-                <div
-                  className={`w-2 h-2 rounded-full transition-all ${refreshing ? 'bg-[#f1f1f1] animate-pulse' : 'bg-[#717171]'}`}
-                  style={{ transitionDuration: 'var(--duration-base)' }}
-                  aria-label={refreshing ? 'Syncing' : 'Idle'}
-                ></div>
-                <p className="text-xs sm:text-sm text-[#aaaaaa]">
-                  Last updated: {lastUpdate}
-                </p>
-              </div>
-            </div>
-            <div className="relative w-full sm:w-auto">
-              <Button
-                onClick={() => fetchData(false)}
-                disabled={refreshing}
-                className="w-full sm:w-auto bg-transparent border border-[#f1f1f1] text-[#f1f1f1] hover:bg-[#f1f1f1]/10 font-medium transition-all hover:scale-105 active:scale-95 disabled:opacity-50 disabled:scale-100 py-3 px-6 text-xs uppercase tracking-wide"
-                style={{ transitionDuration: 'var(--duration-base)', transitionTimingFunction: 'var(--ease-out-quart)' }}
-                aria-label={refreshing ? 'Syncing with Monzo' : 'Sync with Monzo'}
-              >
-                {refreshing ? 'Syncing...' : 'Sync Monzo'}
-              </Button>
-              {syncProgress > 0 && (
-                <div
-                  className="absolute -bottom-2 left-0 right-0 h-1 bg-[#3f3f3f] rounded-full overflow-hidden"
-                  role="progressbar"
-                  aria-valuenow={syncProgress}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                >
-                  <div
-                    className="h-full bg-[#f1f1f1] transition-all ease-out"
-                    style={{
-                      width: `${syncProgress}%`,
-                      transitionDuration: 'var(--duration-base)'
-                    }}
-                  ></div>
-                </div>
-              )}
-            </div>
+            </button>
           </div>
         </div>
 
