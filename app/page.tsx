@@ -414,16 +414,13 @@ export default function Dashboard() {
                 className="hover:no-underline hover:bg-[#272727]/50 transition-colors p-4 sm:p-6 min-h-[44px]"
                 style={{ transitionDuration: 'var(--duration-base)' }}
               >
-                <div className="flex items-center justify-between w-full pr-4">
-                  <div className="text-left">
-                    <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
-                      Recent Transactions
-                    </h2>
-                    <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
-                      Latest from Monzo API · £{recentMonzoTotal.toFixed(2)}
-                    </p>
-                  </div>
-                  <div className="text-[#f1f1f1] font-bold tabular-nums text-sm sm:text-base">{recentMonzo.length}</div>
+                <div className="text-left w-full">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
+                    Recent Transactions
+                  </h2>
+                  <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
+                    {recentMonzo.length} items · £{recentMonzoTotal.toFixed(2)}
+                  </p>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="p-4 sm:p-6 pt-0">
@@ -503,16 +500,13 @@ export default function Dashboard() {
               className="hover:no-underline hover:bg-[#272727]/50 transition-colors p-4 sm:p-6 min-h-[44px]"
               style={{ transitionDuration: 'var(--duration-base)' }}
             >
-              <div className="flex items-center justify-between w-full pr-4">
-                <div className="text-left">
-                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
-                    Work Lunches
-                  </h2>
-                  <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
-                    Kings Cross · £{workLunchesTotal.toFixed(2)}
-                  </p>
-                </div>
-                <div className="text-[#f1f1f1] font-bold tabular-nums text-sm sm:text-base">{workLunches.length}</div>
+              <div className="text-left w-full">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
+                  Work Lunches
+                </h2>
+                <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
+                  {workLunches.length} items · Kings Cross · £{workLunchesTotal.toFixed(2)}
+                </p>
               </div>
             </AccordionTrigger>
             <AccordionContent className="p-4 sm:p-6 pt-0">
@@ -587,16 +581,13 @@ export default function Dashboard() {
               className="hover:no-underline hover:bg-[#272727]/50 transition-colors p-4 sm:p-6 min-h-[44px]"
               style={{ transitionDuration: 'var(--duration-base)' }}
             >
-              <div className="flex items-center justify-between w-full pr-4">
-                <div className="text-left">
-                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
-                    Qatar Business Trip
-                  </h2>
-                  <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
-                    Feb 1-7, 2026 · £{qatarTripTotal.toFixed(2)}
-                  </p>
-                </div>
-                <div className="text-[#f1f1f1] font-bold tabular-nums text-sm sm:text-base">{qatarTrip.length}</div>
+              <div className="text-left w-full">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
+                  Qatar Business Trip
+                </h2>
+                <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
+                  {qatarTrip.length} items · Feb 1-7, 2026 · £{qatarTripTotal.toFixed(2)}
+                </p>
               </div>
             </AccordionTrigger>
             <AccordionContent className="p-4 sm:p-6 pt-0">
