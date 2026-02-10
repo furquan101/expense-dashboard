@@ -65,7 +65,9 @@ async function fetchLatestMonzoTransactions() {
       return [];
     }
 
-    // Fetch last 60 days (this was working before)
+    // Fetch last 60 days
+    // Note: Monzo API allows up to 90 days after initial 5-minute auth window
+    // See: https://docs.monzo.com/ - Strong Customer Authentication
     const since = new Date();
     since.setDate(since.getDate() - 60);
 
@@ -88,7 +90,18 @@ async function fetchLatestMonzoTransactions() {
       });
 
       if (!response.ok) {
-        console.error('Monzo API error:', response.status, await response.text());
+        const errorText = await response.text();
+        console.error('Monzo API error:', response.status, errorText);
+
+        // Handle rate limiting (429) - wait and retry
+        if (response.status === 429 && iteration < maxIterations - 1) {
+          const retryAfter = response.headers.get('Retry-After');
+          const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 2000;
+          console.log(`Rate limited, waiting ${waitTime}ms before retry`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue; // Retry same request
+        }
+
         break;
       }
 
