@@ -105,28 +105,35 @@ export async function getValidAccessToken(): Promise<string> {
   const envRefreshToken = process.env.MONZO_REFRESH_TOKEN;
   const envAccessToken = process.env.MONZO_ACCESS_TOKEN;
 
-  // Initialize cache from env vars if not set
-  if (!tokenCache && envRefreshToken && envAccessToken) {
-    tokenCache = {
-      accessToken: envAccessToken,
-      refreshToken: envRefreshToken,
-      expiresAt: Date.now() + (5 * 60 * 60 * 1000), // Assume 5 hours if unknown
-    };
+  // If we have a refresh token, use full OAuth flow
+  if (envRefreshToken && envAccessToken) {
+    // Initialize cache from env vars if not set
+    if (!tokenCache) {
+      tokenCache = {
+        accessToken: envAccessToken,
+        refreshToken: envRefreshToken,
+        expiresAt: Date.now() + (5 * 60 * 60 * 1000), // Assume 5 hours if unknown
+      };
+    }
+
+    // Check if token is expired or will expire in next 5 minutes
+    const fiveMinutesFromNow = Date.now() + (5 * 60 * 1000);
+
+    if (tokenCache.expiresAt < fiveMinutesFromNow) {
+      console.log('Access token expired or expiring soon, refreshing...');
+      tokenCache = await refreshAccessToken(tokenCache.refreshToken);
+    }
+
+    return tokenCache.accessToken;
   }
 
-  if (!tokenCache) {
-    throw new Error('No Monzo tokens configured. Please set MONZO_REFRESH_TOKEN in .env.local');
+  // Fallback: Just use access token without refresh (manual mode)
+  if (envAccessToken) {
+    console.log('Using access token without refresh (will need manual update in ~5 hours)');
+    return envAccessToken;
   }
 
-  // Check if token is expired or will expire in next 5 minutes
-  const fiveMinutesFromNow = Date.now() + (5 * 60 * 1000);
-
-  if (tokenCache.expiresAt < fiveMinutesFromNow) {
-    console.log('Access token expired or expiring soon, refreshing...');
-    tokenCache = await refreshAccessToken(tokenCache.refreshToken);
-  }
-
-  return tokenCache.accessToken;
+  throw new Error('No Monzo tokens configured. Please set MONZO_ACCESS_TOKEN in .env.local');
 }
 
 /**

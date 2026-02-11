@@ -140,7 +140,10 @@ export async function GET(request: Request) {
       try {
         // Get valid access token (will auto-refresh if expired)
         const accessToken = await getValidAccessToken();
-        const monzoExpenses = await fetchLunchExpenses(accessToken, 60);
+        // Fetch last 7 days of transactions
+        const monzoExpenses = await fetchLunchExpenses(accessToken, 7);
+
+        console.log(`📊 Monzo: Fetched ${monzoExpenses.length} lunch expenses`);
 
         // Filter out duplicates (transactions already in CSV)
         const csvDates = new Set(expenses.map(e => `${e.date}-${e.merchant}-${e.amount}`));
@@ -148,6 +151,8 @@ export async function GET(request: Request) {
           const key = `${e.date}-${e.merchant}-${e.amount}`;
           return !csvDates.has(key);
         });
+
+        console.log(`📊 Monzo: ${newMonzoExpenses.length} after deduplication`);
 
         // Exclude Qatar trip dates (Feb 1-7) as those are fully covered in CSV
         const recentMonzoExpenses = newMonzoExpenses.filter(e => {
@@ -158,6 +163,11 @@ export async function GET(request: Request) {
           }
           return true;
         });
+
+        console.log(`📊 Monzo: ${recentMonzoExpenses.length} after date filtering`);
+        if (recentMonzoExpenses.length > 0) {
+          console.log('📊 Monzo transactions:', recentMonzoExpenses.map(e => `${e.date} ${e.merchant} £${e.amount}`));
+        }
 
         newMonzoCount = recentMonzoExpenses.length;
         newMonzoTotal = recentMonzoExpenses.reduce((sum, e) => sum + e.amount, 0);

@@ -34,19 +34,30 @@ export async function GET(request: Request) {
     // Return tokens to user (they need to add these to .env.local)
     return NextResponse.json({
       success: true,
-      message: 'Authorization successful! Add these to your .env.local file:',
+      message: '✅ Authorization successful! Add these to your .env.local file:',
       tokens: {
         MONZO_ACCESS_TOKEN: tokens.accessToken,
         MONZO_REFRESH_TOKEN: tokens.refreshToken,
         expiresAt: new Date(tokens.expiresAt).toISOString(),
       },
+      envFormat: {
+        note: 'Copy these lines to your .env.local file:',
+        lines: [
+          `MONZO_ACCESS_TOKEN=${tokens.accessToken}`,
+          `MONZO_REFRESH_TOKEN=${tokens.refreshToken}`,
+        ],
+      },
       instructions: [
-        '1. Copy the tokens above',
-        '2. Add them to your .env.local file:',
-        '   MONZO_REFRESH_TOKEN=<refresh_token>',
-        '   MONZO_ACCESS_TOKEN=<access_token>',
-        '3. Restart your dev server',
-        '4. Tokens will now auto-refresh!',
+        '1. Copy both tokens above',
+        '2. Open /Users/furquan.ahmad/expense-dashboard/.env.local',
+        '3. Replace MONZO_ACCESS_TOKEN and MONZO_REFRESH_TOKEN values',
+        '4. Save the file',
+        '5. Restart your dev server (Ctrl+C, then npm run dev)',
+        '6. Tokens will now auto-refresh every ~5 hours!',
+      ],
+      verification: [
+        'After restarting, test with:',
+        'curl http://localhost:3000/api/monzo-debug',
       ],
     });
   } catch (error) {
