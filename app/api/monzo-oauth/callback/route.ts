@@ -28,6 +28,16 @@ export async function GET(request: Request) {
       );
     }
 
+    // Validate state parameter (CSRF protection)
+    // In production, store expected state in session/cookie and validate here
+    if (!state || state !== 'random_state') {
+      console.error('State mismatch:', { received: state, expected: 'random_state' });
+      return NextResponse.json(
+        { error: 'Invalid state parameter - possible CSRF attack' },
+        { status: 400 }
+      );
+    }
+
     // Exchange code for tokens
     const tokens = await exchangeCodeForTokens(code);
 

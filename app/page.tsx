@@ -150,7 +150,6 @@ export default function Dashboard() {
   // Show more state
   const [showAllWorkLunches, setShowAllWorkLunches] = useState(false);
   const [showAllQatar, setShowAllQatar] = useState(false);
-  const [showAllMonzo, setShowAllMonzo] = useState(false);
 
   const fetchData = async (showLoading = true) => {
     try {
@@ -230,26 +229,29 @@ export default function Dashboard() {
     return !(e.date >= '2026-02-01' && e.date <= '2026-02-07');
   }) || [];
 
-  const qatarTrip = data?.expenses.filter(e => {
-    if (!e.date.startsWith('2026-02')) return false;
-    return e.date >= '2026-02-01' && e.date <= '2026-02-07';
+  // Recent transactions (last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+
+  const recentTransactions = data?.expenses.filter(e => {
+    return e.date >= thirtyDaysAgoStr;
   }) || [];
 
-  const recentMonzo = data?.expenses.filter(e => {
-    if (e.notes?.includes('Monzo')) return true;
-    return e.date > '2026-02-07';
+  // Qatar Trip expenses (Feb 1-7, 2026)
+  const qatarTrip = data?.expenses.filter(e => {
+    return e.date >= '2026-02-01' && e.date <= '2026-02-07';
   }) || [];
 
   // Calculate totals for each section
   const workLunchesTotal = workLunches.reduce((sum, e) => sum + e.amount, 0);
+  const recentTransactionsTotal = recentTransactions.reduce((sum, e) => sum + e.amount, 0);
   const qatarTripTotal = qatarTrip.reduce((sum, e) => sum + e.amount, 0);
-  const recentMonzoTotal = recentMonzo.reduce((sum, e) => sum + e.amount, 0);
 
   // Show limited items
   const INITIAL_SHOW = 5;
   const displayedWorkLunches = showAllWorkLunches ? workLunches : workLunches.slice(0, INITIAL_SHOW);
   const displayedQatar = showAllQatar ? qatarTrip : qatarTrip.slice(0, INITIAL_SHOW);
-  const displayedMonzo = showAllMonzo ? recentMonzo : recentMonzo.slice(0, INITIAL_SHOW);
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] p-4 sm:p-6 md:p-8">
@@ -326,10 +328,10 @@ export default function Dashboard() {
                   transitionTimingFunction: 'var(--ease-out-quart)'
                 }}
               >
-                £<AnimatedNumber value={data?.workLunches.total || 0} />
+                £<AnimatedNumber value={workLunchesTotal} />
               </CardTitle>
               <p className="text-[#aaaaaa] tabular-nums text-xs sm:text-sm">
-                {data?.workLunches.count} items
+                {workLunches.length} items
               </p>
             </CardHeader>
           </Card>
@@ -337,7 +339,7 @@ export default function Dashboard() {
           <Card className="border-[#3f3f3f] bg-[#212121] group hover:border-[#717171] transition-all sm:col-span-2 lg:col-span-1" style={{ transitionDuration: 'var(--duration-base)' }}>
             <CardHeader className="pb-3">
               <CardDescription className="text-[#aaaaaa] text-xs sm:text-sm">
-                Qatar Trip
+                Recent Transactions (30d)
               </CardDescription>
               <CardTitle
                 className="text-2xl sm:text-3xl font-bold text-[#f1f1f1] tabular-nums group-hover:scale-105 transition-transform origin-left"
@@ -346,108 +348,17 @@ export default function Dashboard() {
                   transitionTimingFunction: 'var(--ease-out-quart)'
                 }}
               >
-                £<AnimatedNumber value={data?.qatarTrip.total || 0} />
+                £<AnimatedNumber value={recentTransactionsTotal} />
               </CardTitle>
               <p className="text-[#aaaaaa] tabular-nums text-xs sm:text-sm">
-                {data?.qatarTrip.count} items
+                {recentTransactions.length} items
               </p>
             </CardHeader>
           </Card>
         </div>
 
         {/* Expense Sections with Accordions */}
-        <Accordion type="multiple" defaultValue={['work-lunches', 'qatar-trip']} className="space-y-3 sm:space-y-4">
-
-          {/* Recent Monzo Transactions */}
-          {recentMonzo.length > 0 && (
-            <AccordionItem
-              value="recent-monzo"
-              className="border border-[#3f3f3f] rounded-lg bg-[#212121] overflow-hidden transition-all hover:border-[#717171]"
-              style={{ transitionDuration: 'var(--duration-base)' }}
-            >
-              <AccordionTrigger
-                className="hover:no-underline hover:bg-[#272727]/50 transition-colors p-4 sm:p-6 min-h-[44px]"
-                style={{ transitionDuration: 'var(--duration-base)' }}
-              >
-                <div className="text-left w-full">
-                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
-                    Recent Transactions
-                  </h2>
-                  <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
-                    {recentMonzo.length} items · £{recentMonzoTotal.toFixed(2)}
-                  </p>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-4 sm:px-6 pb-4 sm:pb-6">
-                {/* Mobile: Card View */}
-                <div className="md:hidden space-y-3">
-                  {displayedMonzo.map((expense, idx) => (
-                    <ExpenseCard key={idx} expense={expense} />
-                  ))}
-                </div>
-
-                {/* Desktop: Table View */}
-                <div className="hidden md:block overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-[#3f3f3f]/50 hover:bg-[#272727]">
-                        <TableHead className="text-[#f1f1f1] font-bold">Date</TableHead>
-                        <TableHead className="text-[#f1f1f1] font-bold">Merchant</TableHead>
-                        <TableHead className="text-[#f1f1f1] font-bold">Amount</TableHead>
-                        <TableHead className="text-[#f1f1f1] font-bold">Category</TableHead>
-                        <TableHead className="text-[#f1f1f1] font-bold">Location</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {displayedMonzo.map((expense, idx) => {
-                        return (
-                          <TableRow
-                            key={idx}
-                            className="border-[#3f3f3f] hover:bg-[#272727] transition-colors"
-                            style={{
-                              transitionDuration: 'var(--duration-fast)',
-                              animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
-                            }}
-                          >
-                            <TableCell className="text-sm text-[#f1f1f1]">
-                              {formatDate(expense.date, expense.day)}
-                            </TableCell>
-                            <TableCell className="font-medium text-[#f1f1f1]">
-                              {expense.merchant}
-                            </TableCell>
-                            <TableCell className="font-mono font-medium tabular-nums text-[#f1f1f1]">
-                              £{expense.amount.toFixed(2)}
-                            </TableCell>
-                            <TableCell className="text-sm text-[#aaaaaa]">
-                              {expense.expenseType}
-                            </TableCell>
-                            <TableCell className="text-sm text-[#aaaaaa]">
-                              {expense.location}
-                            </TableCell>
-                          </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                </div>
-
-                {recentMonzo.length > INITIAL_SHOW && (
-                  <button
-                    onClick={() => setShowAllMonzo(!showAllMonzo)}
-                    className="w-full text-center text-[#f1f1f1] hover:text-[#ffffff] transition-colors mt-4 py-3 min-h-[44px]"
-                    style={{
-                      fontSize: 'var(--text-sm)',
-                      transitionDuration: 'var(--duration-base)'
-                    }}
-                    aria-expanded={showAllMonzo}
-                    aria-label={showAllMonzo ? 'Show less transactions' : `Show ${recentMonzo.length - INITIAL_SHOW} more transactions`}
-                  >
-                    {showAllMonzo ? 'Show Less' : `Show ${recentMonzo.length - INITIAL_SHOW} More`}
-                  </button>
-                )}
-              </AccordionContent>
-            </AccordionItem>
-          )}
+        <Accordion type="multiple" defaultValue={['work-lunches']} className="space-y-3 sm:space-y-4">
 
           {/* Work Lunches Section */}
           <AccordionItem
