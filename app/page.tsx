@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import type { Expense, ExpenseSummary } from '@/lib/types';
 
-type ExpenseData = ExpenseSummary;
+type ExpenseData = ExpenseSummary & { monzoConnected?: boolean };
 
 // Format date to readable format: "Mon, 3 Feb"
 function formatDate(dateString: string, dayString: string): string {
@@ -124,7 +124,29 @@ function LoadingSkeleton() {
 }
 
 // Empty state component
-function EmptyState() {
+function EmptyState({ showConnect }: { showConnect?: boolean }) {
+  if (showConnect) {
+    return (
+      <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center p-4 sm:p-8">
+        <div className="text-center space-y-6">
+          <div className="text-5xl sm:text-6xl">🏦</div>
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-[#f1f1f1] mb-2">Connect your Monzo account</h2>
+            <p className="text-[#aaaaaa] text-sm sm:text-base mb-6">
+              Link your Monzo bank to automatically track your expenses.
+            </p>
+          </div>
+          <a
+            href="/api/monzo-oauth/setup"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#f1f1f1] text-[#0f0f0f] hover:bg-[#d4d4d4] transition-colors font-medium text-base"
+          >
+            Connect with Monzo
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#0f0f0f] flex items-center justify-center p-4 sm:p-8">
       <div className="text-center space-y-4">
@@ -146,10 +168,34 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [syncProgress, setSyncProgress] = useState(0);
+  const [monzoConnected, setMonzoConnected] = useState<boolean | null>(null);
+  const [disconnecting, setDisconnecting] = useState(false);
 
   // Show more state
   const [showAllWorkLunches, setShowAllWorkLunches] = useState(false);
   const [showAllQatar, setShowAllQatar] = useState(false);
+
+  const checkAuthStatus = async () => {
+    try {
+      const res = await fetch('/api/auth/status');
+      const json = await res.json();
+      setMonzoConnected(json.connected);
+    } catch {
+      setMonzoConnected(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    setDisconnecting(true);
+    try {
+      await fetch('/api/auth/disconnect', { method: 'POST' });
+      setMonzoConnected(false);
+      setData(null);
+    } catch {
+      // ignore
+    }
+    setDisconnecting(false);
+  };
 
   const fetchData = async (showLoading = true) => {
     try {
@@ -169,6 +215,10 @@ export default function Dashboard() {
       clearInterval(progressInterval);
       setSyncProgress(100);
 
+      // Update connection status from response
+      // Only set to true if explicitly connected, otherwise false
+      setMonzoConnected(json.monzoConnected === true);
+
       // Small delay to show 100% before hiding
       setTimeout(() => {
         setData(json);
@@ -186,6 +236,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    checkAuthStatus();
     fetchData();
     // Auto-refresh every 5 minutes
     const interval = setInterval(() => fetchData(false), 5 * 60 * 1000);
@@ -218,7 +269,7 @@ export default function Dashboard() {
   }
 
   if (!data || data.expenses.length === 0) {
-    return <EmptyState />;
+    return <EmptyState showConnect={monzoConnected === false} />;
   }
 
   const lastUpdate = data?.lastUpdated ? new Date(data.lastUpdated).toLocaleTimeString() : '';
@@ -262,10 +313,23 @@ export default function Dashboard() {
             <h1 className="text-3xl sm:text-4xl font-bold text-[#f1f1f1] tracking-tight">
               Expense Reports
             </h1>
-            <p className="text-[#aaaaaa] text-sm sm:text-base">
-              Real-time lunch tracking & business trips
-              <span className="hidden sm:inline"> · Live sync with Monzo</span>
-            </p>
+            <div className="flex items-center gap-3 flex-wrap">
+              <p className="text-[#aaaaaa] text-sm sm:text-base">
+                Real-time lunch tracking & business trips
+              </p>
+              {monzoConnected === true && (
+                <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-[#1a2e1a] text-[#4ade80] border border-[#2d4a2d]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-pulse"></span>
+                  Monzo Connected
+                </span>
+              )}
+              {monzoConnected === false && (
+                <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-[#2a1a1a] text-[#f87171] border border-[#4a2d2d]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#f87171]"></span>
+                  Monzo Disconnected
+                </span>
+              )}
+            </div>
             <button
               onClick={() => fetchData(false)}
               disabled={refreshing}
@@ -293,6 +357,31 @@ export default function Dashboard() {
             </button>
           </div>
         </div>
+
+        {/* Disconnected Banner */}
+        {monzoConnected === false && (
+          <div className="border border-[#4a2d2d] bg-[#2a1a1a] rounded-lg p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="text-2xl sm:text-3xl">⚠️</div>
+              <div className="flex-1 space-y-3">
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-[#f87171] mb-1">
+                    Monzo Connection Lost
+                  </h3>
+                  <p className="text-[#aaaaaa] text-sm sm:text-base">
+                    Your Monzo connection has expired. Recent transactions from Monzo won't appear until you reconnect.
+                  </p>
+                </div>
+                <a
+                  href="/api/monzo-oauth/setup"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#f1f1f1] text-[#0f0f0f] hover:bg-[#d4d4d4] transition-colors font-medium text-sm"
+                >
+                  Reconnect Monzo
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
@@ -528,10 +617,27 @@ export default function Dashboard() {
         </Accordion>
 
         {/* Footer */}
-        <div className="border-t border-[#3f3f3f] pt-6 mt-8">
-          <p className="text-center text-xs text-[#aaaaaa]">
+        <div className="border-t border-[#3f3f3f] pt-6 mt-8 flex items-center justify-between">
+          <p className="text-xs text-[#aaaaaa]">
             Designed and developed by Furquan Ahmad
           </p>
+          {monzoConnected === true && (
+            <button
+              onClick={handleDisconnect}
+              disabled={disconnecting}
+              className="text-xs text-[#717171] hover:text-[#aaaaaa] transition-colors cursor-pointer"
+            >
+              {disconnecting ? 'Disconnecting...' : 'Disconnect Monzo'}
+            </button>
+          )}
+          {monzoConnected === false && (
+            <a
+              href="/api/monzo-oauth/setup"
+              className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-[#f1f1f1] text-[#0f0f0f] hover:bg-[#d4d4d4] transition-colors font-medium"
+            >
+              Connect Monzo
+            </a>
+          )}
         </div>
       </div>
 
