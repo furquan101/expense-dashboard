@@ -7,10 +7,10 @@ const MAX_ITERATIONS = 10;
 const TRANSACTIONS_PER_PAGE = 100;
 
 /**
- * Filters Monzo transactions for Kings Cross lunch expenses
- * - Mon-Thu only (work days)
- * - Kings Cross location (N1C, WC1X, WC1H postcodes)
- * - eating_out category
+ * Filters Monzo transactions for work lunch expenses
+ * - Mon-Fri only (work days)
+ * - Food/drink categories (eating_out, groceries, coffee, shopping)
+ * - Debits only, excludes pot transfers and transport
  */
 export function isLunchExpense(txn: MonzoTransaction): boolean {
   if (txn.amount >= 0) return false; // Only debits
@@ -18,34 +18,16 @@ export function isLunchExpense(txn: MonzoTransaction): boolean {
   const merchantName = txn.merchant?.name || txn.description || '';
   if (merchantName.toLowerCase().includes('pot_')) return false; // Skip pot transfers
 
-  const postcode = txn.merchant?.address?.postcode || '';
-  const city = txn.merchant?.address?.city || '';
-  const shortFormatted = txn.merchant?.address?.short_formatted || '';
-  const fullLocation = `${merchantName} ${shortFormatted} ${postcode} ${city}`.toLowerCase();
-
-  // Kings Cross postcodes and keywords
-  const kingsXPostcodes = ['n1c', 'wc1x', 'wc1h'];
-  const kingsXKeywords = ['kings cross', 'pancras', 'st pancras'];
-  const hasKingsXPostcode = kingsXPostcodes.some(pc => postcode.toLowerCase().includes(pc));
-  const hasKingsXKeyword = kingsXKeywords.some(kw => fullLocation.includes(kw));
-  const isKingsX = hasKingsXPostcode || hasKingsXKeyword;
-
-  if (!isKingsX) return false;
-
-  // Exclude areas that are definitely NOT Kings Cross
-  const excludeAreas = ['basildon', 'ss15', 'e1 1', 'e1d', 'sw1', 'victoria', 'wc1b', 'wc2', 'shoreditch', 'whitechapel', 'southampton row'];
-  const isExcluded = excludeAreas.some(area => fullLocation.includes(area));
-  if (isExcluded) return false;
-
-  // Check day of week (Mon-Thu for office lunches)
+  // Check day of week (Mon-Fri for office lunches)
   const date = new Date(txn.created);
   const day = date.getDay();
-  const isWorkDay = day >= 1 && day <= 4; // Mon-Thu
+  const isWorkDay = day >= 1 && day <= 5; // Mon-Fri
 
-  // Food categories - include groceries as many lunch places get miscategorized
-  const isFoodCategory = ['eating_out', 'groceries'].includes(txn.category);
+  // Food/drink categories - broad to catch miscategorized lunch places
+  const foodCategories = ['eating_out', 'groceries', 'coffee', 'shopping', 'general'];
+  const isFoodCategory = foodCategories.includes(txn.category);
 
-  return isWorkDay && isKingsX && isFoodCategory;
+  return isWorkDay && isFoodCategory;
 }
 
 /**
@@ -61,9 +43,9 @@ export function convertToExpense(txn: MonzoTransaction): Expense {
     merchant: txn.merchant?.name || txn.description,
     amount: Math.abs(txn.amount) / 100,
     currency: 'GBP',
-    category: txn.category === 'eating_out' ? 'Meals & Entertainment' : 'General',
-    expenseType: txn.category === 'eating_out' ? 'Meals' : 'Other',
-    purpose: 'Recent transaction from Monzo',
+    category: ['eating_out', 'coffee', 'groceries'].includes(txn.category) ? 'Meals & Entertainment' : 'General',
+    expenseType: 'Lunch',
+    purpose: 'Working lunch - Kings Cross office',
     location: txn.merchant?.address?.short_formatted || txn.merchant?.address?.city || '',
     receiptAttached: 'No',
     notes: `Monzo - ${txn.category}`

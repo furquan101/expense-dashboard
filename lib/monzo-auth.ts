@@ -1,7 +1,10 @@
 /**
  * Monzo OAuth2 Token Management
- * Handles automatic token refresh using refresh tokens
+ * Handles automatic token refresh using refresh tokens.
+ * Reads tokens from encrypted cookies first, then falls back to env vars.
  */
+
+import { getTokensFromCookies, saveTokensToCookies } from './token-storage';
 
 interface MonzoTokens {
   access_token: string;
@@ -10,14 +13,13 @@ interface MonzoTokens {
   token_type: string;
 }
 
-interface TokenStorage {
+export interface TokenStorage {
   accessToken: string;
   refreshToken: string;
   expiresAt: number; // Unix timestamp
 }
 
-// In production, store this in a database or secure storage
-// For now, we'll use a simple in-memory cache + env vars
+// In-memory cache for the current request lifecycle
 let tokenCache: TokenStorage | null = null;
 
 const MONZO_CLIENT_ID = process.env.MONZO_CLIENT_ID || '';
@@ -94,31 +96,49 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenSto
   tokenCache = storage;
   console.log('Token refreshed successfully, expires at:', new Date(storage.expiresAt));
 
+  // Persist refreshed tokens back to cookies
+  try {
+    await saveTokensToCookies(storage.accessToken, storage.refreshToken, tokens.expires_in);
+  } catch {
+    // Cookie update may fail in some contexts, that's ok - in-memory cache still works
+  }
+
   return storage;
 }
 
 /**
- * Get valid access token (refreshes if expired)
+ * Get valid access token (refreshes if expired).
+ * Checks cookies first, then falls back to env vars.
  */
 export async function getValidAccessToken(): Promise<string> {
-  // Try to use environment variable tokens first
+  // 1. Try cookies first (seamless OAuth flow)
+  const cookieTokens = await getTokensFromCookies();
+  if (cookieTokens) {
+    tokenCache = cookieTokens;
+
+    const fiveMinutesFromNow = Date.now() + (5 * 60 * 1000);
+    if (cookieTokens.expiresAt < fiveMinutesFromNow) {
+      console.log('Cookie token expired or expiring soon, refreshing...');
+      tokenCache = await refreshAccessToken(cookieTokens.refreshToken);
+    }
+
+    return tokenCache.accessToken;
+  }
+
+  // 2. Fall back to env vars
   const envRefreshToken = process.env.MONZO_REFRESH_TOKEN;
   const envAccessToken = process.env.MONZO_ACCESS_TOKEN;
 
-  // If we have a refresh token, use full OAuth flow
   if (envRefreshToken && envAccessToken) {
-    // Initialize cache from env vars if not set
     if (!tokenCache) {
       tokenCache = {
         accessToken: envAccessToken,
         refreshToken: envRefreshToken,
-        expiresAt: Date.now() + (5 * 60 * 60 * 1000), // Assume 5 hours if unknown
+        expiresAt: Date.now() + (5 * 60 * 60 * 1000),
       };
     }
 
-    // Check if token is expired or will expire in next 5 minutes
     const fiveMinutesFromNow = Date.now() + (5 * 60 * 1000);
-
     if (tokenCache.expiresAt < fiveMinutesFromNow) {
       console.log('Access token expired or expiring soon, refreshing...');
       tokenCache = await refreshAccessToken(tokenCache.refreshToken);
@@ -127,13 +147,22 @@ export async function getValidAccessToken(): Promise<string> {
     return tokenCache.accessToken;
   }
 
-  // Fallback: Just use access token without refresh (manual mode)
   if (envAccessToken) {
-    console.log('Using access token without refresh (will need manual update in ~5 hours)');
     return envAccessToken;
   }
 
-  throw new Error('No Monzo tokens configured. Please set MONZO_ACCESS_TOKEN in .env.local');
+  throw new Error('MONZO_NOT_CONNECTED');
+}
+
+/**
+ * Check if Monzo tokens are available (from cookies or env vars)
+ */
+export async function hasValidTokens(): Promise<boolean> {
+  const cookieTokens = await getTokensFromCookies();
+  if (cookieTokens) return true;
+
+  const envAccessToken = process.env.MONZO_ACCESS_TOKEN;
+  return !!envAccessToken;
 }
 
 /**
@@ -148,21 +177,4 @@ export function getAuthorizationUrl(state: string = 'random_state'): string {
   });
 
   return `https://auth.monzo.com/?${params.toString()}`;
-}
-
-/**
- * Initialize token storage from environment variables
- */
-export function initializeTokens(): void {
-  const refreshToken = process.env.MONZO_REFRESH_TOKEN;
-  const accessToken = process.env.MONZO_ACCESS_TOKEN;
-
-  if (refreshToken && accessToken) {
-    tokenCache = {
-      accessToken,
-      refreshToken,
-      expiresAt: Date.now() + (5 * 60 * 60 * 1000), // Assume 5 hours
-    };
-    console.log('Monzo tokens initialized from environment');
-  }
 }

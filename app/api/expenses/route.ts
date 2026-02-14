@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import type { Expense, ExpenseSummary } from '@/lib/types';
-import { fetchLunchExpenses } from '@/lib/monzo-client';
+import { fetchMonzoTransactions, isLunchExpense, convertToExpense } from '@/lib/monzo-client';
 import { getValidAccessToken } from '@/lib/monzo-auth';
 
 // In-memory cache to avoid fetching Monzo on every request
@@ -140,10 +140,18 @@ export async function GET(request: Request) {
       try {
         // Get valid access token (will auto-refresh if expired)
         const accessToken = await getValidAccessToken();
-        // Fetch last 7 days of transactions
-        const monzoExpenses = await fetchLunchExpenses(accessToken, 7);
+        // Fetch all transactions (single API call)
+        const allTxns = await fetchMonzoTransactions(accessToken, 60);
+        console.log(`📊 Monzo: ${allTxns.length} total transactions`);
+        const debits = allTxns.filter(t => t.amount < 0);
+        console.log(`📊 Monzo: ${debits.length} debits`);
+        debits.slice(0, 10).forEach(txn => {
+          console.log(`  ${new Date(txn.created).toISOString().split('T')[0]} | ${txn.merchant?.name || txn.description} | £${Math.abs(txn.amount)/100} | cat:${txn.category}`);
+        });
 
-        console.log(`📊 Monzo: Fetched ${monzoExpenses.length} lunch expenses`);
+        // Filter for lunch expenses and convert
+        const monzoExpenses = allTxns.filter(isLunchExpense).map(convertToExpense);
+        console.log(`📊 Monzo: ${monzoExpenses.length} after lunch filter`);
 
         // Filter out duplicates (transactions already in CSV)
         const csvDates = new Set(expenses.map(e => `${e.date}-${e.merchant}-${e.amount}`));
@@ -174,6 +182,22 @@ export async function GET(request: Request) {
 
         expenses.push(...recentMonzoExpenses);
       } catch (error) {
+        const message = error instanceof Error ? error.message : '';
+        if (message === 'MONZO_NOT_CONNECTED') {
+          // Return partial data with connection status
+          expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          return NextResponse.json({
+            expenses,
+            total: parseFloat((workLunchesTotal + qatarTripTotal).toFixed(2)),
+            count: expenses.length,
+            workLunches: { total: parseFloat(workLunchesTotal.toFixed(2)), count: workLunchesCount },
+            qatarTrip: { total: parseFloat(qatarTripTotal.toFixed(2)), count: qatarTripCount },
+            newMonzo: { total: 0, count: 0 },
+            lastUpdated: new Date().toISOString(),
+            cached: false,
+            monzoConnected: false,
+          });
+        }
         console.error('Failed to fetch Monzo transactions:', error);
         // Continue without Monzo data
       }
