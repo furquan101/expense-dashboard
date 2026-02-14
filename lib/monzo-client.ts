@@ -27,7 +27,24 @@ export function isLunchExpense(txn: MonzoTransaction): boolean {
   const foodCategories = ['eating_out', 'groceries', 'coffee', 'shopping', 'general'];
   const isFoodCategory = foodCategories.includes(txn.category);
 
-  return isWorkDay && isFoodCategory;
+  const result = isWorkDay && isFoodCategory;
+  
+  // Debug log for Feb transactions
+  const txnDate = date.toISOString().split('T')[0];
+  if (txnDate >= '2026-02-08' && txnDate <= '2026-02-14') {
+    console.error('[Monzo Filter Debug] Feb 8-14 transaction:', {
+      date: txnDate,
+      merchant: merchantName,
+      amount: Math.abs(txn.amount) / 100,
+      category: txn.category,
+      dayOfWeek: day,
+      isWorkDay,
+      isFoodCategory,
+      passed: result
+    });
+  }
+
+  return result;
 }
 
 /**

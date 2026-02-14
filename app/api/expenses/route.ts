@@ -152,12 +152,23 @@ export async function GET(request: Request) {
         // Filter for lunch expenses and convert
         const monzoExpenses = allTxns.filter(isLunchExpense).map(convertToExpense);
         console.log(`📊 Monzo: ${monzoExpenses.length} after lunch filter`);
+        
+        // Debug: Check Feb 8-14 specifically
+        const feb8to14 = monzoExpenses.filter(e => e.date >= '2026-02-08' && e.date <= '2026-02-14');
+        console.error('[Expenses Debug] Feb 8-14 after lunch filter:', {
+          count: feb8to14.length,
+          transactions: feb8to14.map(e => ({date: e.date, merchant: e.merchant, amount: e.amount}))
+        });
 
         // Filter out duplicates (transactions already in CSV)
         const csvDates = new Set(expenses.map(e => `${e.date}-${e.merchant}-${e.amount}`));
         const newMonzoExpenses = monzoExpenses.filter(e => {
           const key = `${e.date}-${e.merchant}-${e.amount}`;
-          return !csvDates.has(key);
+          const isDupe = csvDates.has(key);
+          if (e.date >= '2026-02-08' && e.date <= '2026-02-14' && isDupe) {
+            console.error('[Expenses Debug] Feb 8-14 marked as duplicate:', {date: e.date, merchant: e.merchant, amount: e.amount});
+          }
+          return !isDupe;
         });
 
         console.log(`📊 Monzo: ${newMonzoExpenses.length} after deduplication`);
@@ -166,13 +177,19 @@ export async function GET(request: Request) {
         const recentMonzoExpenses = newMonzoExpenses.filter(e => {
           const date = e.date;
           // Exclude Qatar trip period (fully documented in CSV)
-          if (date >= '2026-02-01' && date <= '2026-02-07') {
-            return false;
+          const isQatarPeriod = date >= '2026-02-01' && date <= '2026-02-07';
+          if (date >= '2026-02-08' && date <= '2026-02-14' && isQatarPeriod) {
+            console.error('[Expenses Debug] WRONG: Feb 8-14 incorrectly marked as Qatar period:', {date});
           }
-          return true;
+          return !isQatarPeriod;
         });
 
         console.log(`📊 Monzo: ${recentMonzoExpenses.length} after date filtering`);
+        console.error('[Expenses Debug] Final Feb 8-14 count:', {
+          count: recentMonzoExpenses.filter(e => e.date >= '2026-02-08' && e.date <= '2026-02-14').length,
+          transactions: recentMonzoExpenses.filter(e => e.date >= '2026-02-08' && e.date <= '2026-02-14').map(e => ({date: e.date, merchant: e.merchant, amount: e.amount}))
+        });
+        
         if (recentMonzoExpenses.length > 0) {
           console.log('📊 Monzo transactions:', recentMonzoExpenses.map(e => `${e.date} ${e.merchant} £${e.amount}`));
         }
