@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 import { exchangeCodeForTokens } from '@/lib/monzo-auth';
+import { saveTokensToCookies } from '@/lib/token-storage';
 
 export const dynamic = 'force-dynamic';
 
 /**
  * OAuth callback endpoint
- * Monzo redirects here after user authorizes the app
+ * Monzo redirects here after user authorizes the app.
+ * Saves tokens to encrypted cookies and redirects to dashboard.
  */
 export async function GET(request: Request) {
   try {
@@ -13,70 +16,57 @@ export async function GET(request: Request) {
     const code = searchParams.get('code');
     const state = searchParams.get('state');
     const error = searchParams.get('error');
+    const baseUrl = new URL(request.url).origin;
+
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/5d3eae54-90f7-4b9a-b916-82f73d2c9996',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'callback/route.ts:18',message:'Callback received',data:{hasCode:!!code,hasState:!!state,hasError:!!error,requestUrl:request.url,origin:baseUrl},timestamp:Date.now(),hypothesisId:'A,D'})}).catch(()=>{});
+    // #endregion
 
     if (error) {
-      return NextResponse.json(
-        { error: `OAuth error: ${error}` },
-        { status: 400 }
-      );
+      return NextResponse.redirect(`${baseUrl}/?auth_error=${encodeURIComponent(error)}`);
     }
 
     if (!code) {
-      return NextResponse.json(
-        { error: 'No authorization code provided' },
-        { status: 400 }
-      );
+      return NextResponse.redirect(`${baseUrl}/?auth_error=no_code`);
     }
 
-    // Validate state parameter (CSRF protection)
-    // In production, store expected state in session/cookie and validate here
-    if (!state || state !== 'random_state') {
-      console.error('State mismatch:', { received: state, expected: 'random_state' });
-      return NextResponse.json(
-        { error: 'Invalid state parameter - possible CSRF attack' },
-        { status: 400 }
-      );
+    // Validate CSRF state
+    const cookieStore = await cookies();
+    
+    // #region agent log
+    const allCookies = cookieStore.getAll().map(c => ({name: c.name, hasValue: !!c.value, valueLength: c.value?.length || 0}));
+    fetch('http://127.0.0.1:7245/ingest/5d3eae54-90f7-4b9a-b916-82f73d2c9996',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'callback/route.ts:37',message:'Reading cookies',data:{allCookies,totalCookies:allCookies.length},timestamp:Date.now(),hypothesisId:'A,C,E'})}).catch(()=>{});
+    // #endregion
+    
+    const expectedState = cookieStore.get('monzo_oauth_state')?.value;
+    
+    // #region agent log
+    fetch('http://127.0.0.1:7245/ingest/5d3eae54-90f7-4b9a-b916-82f73d2c9996',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'callback/route.ts:42',message:'State validation',data:{receivedState:state,expectedState:expectedState,statesMatch:state===expectedState,hasReceivedState:!!state,hasExpectedState:!!expectedState},timestamp:Date.now(),hypothesisId:'A,C,D,E'})}).catch(()=>{});
+    // #endregion
+    
+    if (!state || !expectedState || state !== expectedState) {
+      // #region agent log
+      fetch('http://127.0.0.1:7245/ingest/5d3eae54-90f7-4b9a-b916-82f73d2c9996',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'callback/route.ts:48',message:'State validation FAILED',data:{reason:!state?'no_state_param':!expectedState?'no_cookie':'mismatch'},timestamp:Date.now(),hypothesisId:'A,C,D,E'})}).catch(()=>{});
+      // #endregion
+      return NextResponse.redirect(`${baseUrl}/?auth_error=invalid_state`);
     }
+
+    // Clear the state cookie
+    cookieStore.delete('monzo_oauth_state');
 
     // Exchange code for tokens
     const tokens = await exchangeCodeForTokens(code);
 
-    // Return tokens to user (they need to add these to .env.local)
-    return NextResponse.json({
-      success: true,
-      message: '✅ Authorization successful! Add these to your .env.local file:',
-      tokens: {
-        MONZO_ACCESS_TOKEN: tokens.accessToken,
-        MONZO_REFRESH_TOKEN: tokens.refreshToken,
-        expiresAt: new Date(tokens.expiresAt).toISOString(),
-      },
-      envFormat: {
-        note: 'Copy these lines to your .env.local file:',
-        lines: [
-          `MONZO_ACCESS_TOKEN=${tokens.accessToken}`,
-          `MONZO_REFRESH_TOKEN=${tokens.refreshToken}`,
-        ],
-      },
-      instructions: [
-        '1. Copy both tokens above',
-        '2. Open /Users/furquan.ahmad/expense-dashboard/.env.local',
-        '3. Replace MONZO_ACCESS_TOKEN and MONZO_REFRESH_TOKEN values',
-        '4. Save the file',
-        '5. Restart your dev server (Ctrl+C, then npm run dev)',
-        '6. Tokens will now auto-refresh every ~5 hours!',
-      ],
-      verification: [
-        'After restarting, test with:',
-        'curl http://localhost:3000/api/monzo-debug',
-      ],
-    });
+    // Save tokens to encrypted cookies
+    const expiresIn = Math.floor((tokens.expiresAt - Date.now()) / 1000);
+    await saveTokensToCookies(tokens.accessToken, tokens.refreshToken, expiresIn);
+
+    // Redirect to dashboard
+    return NextResponse.redirect(`${baseUrl}/?connected=true`);
   } catch (error) {
     console.error('OAuth callback error:', error);
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    const baseUrl = new URL(request.url).origin;
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    return NextResponse.redirect(`${baseUrl}/?auth_error=${encodeURIComponent(message)}`);
   }
 }
