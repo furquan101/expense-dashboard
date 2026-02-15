@@ -167,23 +167,12 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [syncProgress, setSyncProgress] = useState(0);
   const [monzoConnected, setMonzoConnected] = useState<boolean | null>(null);
   const [disconnecting, setDisconnecting] = useState(false);
 
   // Show more state
   const [showAllWorkLunches, setShowAllWorkLunches] = useState(false);
   const [showAllQatar, setShowAllQatar] = useState(false);
-
-  const checkAuthStatus = async () => {
-    try {
-      const res = await fetch('/api/auth/status');
-      const json = await res.json();
-      setMonzoConnected(json.connected);
-    } catch {
-      setMonzoConnected(false);
-    }
-  };
 
   const handleDisconnect = async () => {
     setDisconnecting(true);
@@ -197,49 +186,35 @@ export default function Dashboard() {
     setDisconnecting(false);
   };
 
-  const fetchData = async (showLoading = true) => {
+  const fetchData = async (showLoading = true, includeMonzo = true) => {
     try {
       if (showLoading) setLoading(true);
       setRefreshing(true);
-      setSyncProgress(0);
 
-      // Simulate progress for better UX
-      const progressInterval = setInterval(() => {
-        setSyncProgress(prev => Math.min(prev + 10, 90));
-      }, 100);
-
-      const response = await fetch('/api/expenses?includeMonzo=true');
+      const response = await fetch(`/api/expenses?includeMonzo=${includeMonzo}`);
       if (!response.ok) throw new Error('Failed to fetch data');
       const json = await response.json();
 
-      clearInterval(progressInterval);
-      setSyncProgress(100);
-
-      // Update connection status from response
-      // Only set to true if explicitly connected, otherwise false
       setMonzoConnected(json.monzoConnected === true);
-
-      // Small delay to show 100% before hiding
-      setTimeout(() => {
-        setData(json);
-        setError(null);
-        setLoading(false);
-        setRefreshing(false);
-        setSyncProgress(0);
-      }, 200);
+      setData(json);
+      setError(null);
+      setLoading(false);
+      setRefreshing(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
       setLoading(false);
       setRefreshing(false);
-      setSyncProgress(0);
     }
   };
 
   useEffect(() => {
-    checkAuthStatus();
-    fetchData();
+    // Phase 1: Show CSV data instantly (no Monzo call)
+    fetchData(true, false).then(() => {
+      // Phase 2: Fetch Monzo data in background
+      fetchData(false, true);
+    });
     // Auto-refresh every 5 minutes
-    const interval = setInterval(() => fetchData(false), 5 * 60 * 1000);
+    const interval = setInterval(() => fetchData(false, true), 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -313,23 +288,9 @@ export default function Dashboard() {
             <h1 className="text-3xl sm:text-4xl font-bold text-[#f1f1f1] tracking-tight">
               Expense Reports
             </h1>
-            <div className="flex items-center gap-3 flex-wrap">
-              <p className="text-[#aaaaaa] text-sm sm:text-base">
-                Real-time lunch tracking & business trips
-              </p>
-              {monzoConnected === true && (
-                <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-[#1a2e1a] text-[#4ade80] border border-[#2d4a2d]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-pulse"></span>
-                  Monzo Connected
-                </span>
-              )}
-              {monzoConnected === false && (
-                <span className="inline-flex items-center gap-1.5 text-xs px-2.5 py-1 rounded-full bg-[#2a1a1a] text-[#f87171] border border-[#4a2d2d]">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#f87171]"></span>
-                  Monzo Disconnected
-                </span>
-              )}
-            </div>
+            <p className="text-[#aaaaaa] text-sm sm:text-base">
+              Real-time lunch tracking & business trips
+            </p>
             <button
               onClick={() => fetchData(false)}
               disabled={refreshing}
@@ -354,6 +315,18 @@ export default function Dashboard() {
               <p className="text-xs sm:text-sm text-[#aaaaaa] group-hover:text-[#f1f1f1] transition-colors" style={{ transitionDuration: 'var(--duration-base)' }}>
                 Last updated: {lastUpdate}
               </p>
+              {monzoConnected === true && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-[#4ade80]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#4ade80] animate-pulse"></span>
+                  Monzo Connected
+                </span>
+              )}
+              {monzoConnected === false && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-[#f87171]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#f87171]"></span>
+                  Monzo Disconnected
+                </span>
+              )}
             </button>
           </div>
         </div>

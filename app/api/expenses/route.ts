@@ -4,13 +4,23 @@ import path from 'path';
 import type { Expense, ExpenseSummary } from '@/lib/types';
 import { fetchMonzoTransactions, isLunchExpense, convertToExpense } from '@/lib/monzo-client';
 import { getValidAccessToken } from '@/lib/monzo-auth';
+import { loadStoredTransactions, mergeAndStore, isBlobConfigured } from '@/lib/transaction-store';
 
-// In-memory cache to avoid fetching Monzo on every request
+// In-memory cache for full response (CSV + Monzo)
 let cachedData: {
   data: ExpenseSummary;
   timestamp: number;
 } | null = null;
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
+// In-memory cache for CSV (never changes at runtime)
+let csvCache: {
+  expenses: Expense[];
+  workLunchesTotal: number;
+  workLunchesCount: number;
+  qatarTripTotal: number;
+  qatarTripCount: number;
+} | null = null;
 
 /**
  * Parses CSV line handling quoted fields
@@ -122,77 +132,57 @@ export async function GET(request: Request) {
       });
     }
 
-    // Load CSV expenses
-    const csvPath = process.env.CSV_PATH || path.join(process.cwd(), 'data', 'expenses.csv');
-    const {
-      expenses,
-      workLunchesTotal,
-      workLunchesCount,
-      qatarTripTotal,
-      qatarTripCount
-    } = loadCSVExpenses(csvPath);
+    // Load CSV expenses (cached in memory after first read)
+    if (!csvCache) {
+      const csvPath = process.env.CSV_PATH || path.join(process.cwd(), 'data', 'expenses.csv');
+      csvCache = loadCSVExpenses(csvPath);
+    }
+    // Clone expenses array so we can push Monzo data without mutating cache
+    const expenses = [...csvCache.expenses];
+    const { workLunchesTotal, workLunchesCount, qatarTripTotal, qatarTripCount } = csvCache;
 
     // Fetch and merge Monzo transactions
     let newMonzoCount = 0;
     let newMonzoTotal = 0;
+    let monzoConnected = false;
 
     if (includeMonzo) {
       try {
         // Get valid access token (will auto-refresh if expired)
         const accessToken = await getValidAccessToken();
-        // Fetch all transactions (single API call)
+        monzoConnected = true;
+
+        // Fetch recent transactions from Monzo API
         const allTxns = await fetchMonzoTransactions(accessToken, 60);
-        console.log(`📊 Monzo: ${allTxns.length} total transactions`);
-        const debits = allTxns.filter(t => t.amount < 0);
-        console.log(`📊 Monzo: ${debits.length} debits`);
-        debits.slice(0, 10).forEach(txn => {
-          console.log(`  ${new Date(txn.created).toISOString().split('T')[0]} | ${txn.merchant?.name || txn.description} | £${Math.abs(txn.amount)/100} | cat:${txn.category}`);
-        });
+        console.log(`Monzo: ${allTxns.length} raw transactions fetched`);
 
         // Filter for lunch expenses and convert
         const monzoExpenses = allTxns.filter(isLunchExpense).map(convertToExpense);
-        console.log(`📊 Monzo: ${monzoExpenses.length} after lunch filter`);
-        
-        // Debug: Check Feb 8-14 specifically
-        const feb8to14 = monzoExpenses.filter(e => e.date >= '2026-02-08' && e.date <= '2026-02-14');
-        console.error('[Expenses Debug] Feb 8-14 after lunch filter:', {
-          count: feb8to14.length,
-          transactions: feb8to14.map(e => ({date: e.date, merchant: e.merchant, amount: e.amount}))
-        });
+        console.log(`Monzo: ${monzoExpenses.length} after lunch filter`);
+
+        // Persist to Vercel Blob for long-term storage (async, non-blocking)
+        let allStoredExpenses = monzoExpenses;
+        if (isBlobConfigured()) {
+          allStoredExpenses = await mergeAndStore(monzoExpenses);
+          console.log(`Blob: ${allStoredExpenses.length} total stored transactions`);
+        }
+
+        // Use stored history (includes older transactions beyond 90-day API limit)
+        const allMonzoExpenses = isBlobConfigured() ? allStoredExpenses : monzoExpenses;
 
         // Filter out duplicates (transactions already in CSV)
-        const csvDates = new Set(expenses.map(e => `${e.date}-${e.merchant}-${e.amount}`));
-        const newMonzoExpenses = monzoExpenses.filter(e => {
+        const csvKeys = new Set(expenses.map(e => `${e.date}-${e.merchant}-${e.amount}`));
+        const newMonzoExpenses = allMonzoExpenses.filter(e => {
           const key = `${e.date}-${e.merchant}-${e.amount}`;
-          const isDupe = csvDates.has(key);
-          if (e.date >= '2026-02-08' && e.date <= '2026-02-14' && isDupe) {
-            console.error('[Expenses Debug] Feb 8-14 marked as duplicate:', {date: e.date, merchant: e.merchant, amount: e.amount});
-          }
-          return !isDupe;
+          return !csvKeys.has(key);
         });
-
-        console.log(`📊 Monzo: ${newMonzoExpenses.length} after deduplication`);
 
         // Exclude Qatar trip dates (Feb 1-7) as those are fully covered in CSV
         const recentMonzoExpenses = newMonzoExpenses.filter(e => {
-          const date = e.date;
-          // Exclude Qatar trip period (fully documented in CSV)
-          const isQatarPeriod = date >= '2026-02-01' && date <= '2026-02-07';
-          if (date >= '2026-02-08' && date <= '2026-02-14' && isQatarPeriod) {
-            console.error('[Expenses Debug] WRONG: Feb 8-14 incorrectly marked as Qatar period:', {date});
-          }
-          return !isQatarPeriod;
+          return !(e.date >= '2026-02-01' && e.date <= '2026-02-07');
         });
 
-        console.log(`📊 Monzo: ${recentMonzoExpenses.length} after date filtering`);
-        console.error('[Expenses Debug] Final Feb 8-14 count:', {
-          count: recentMonzoExpenses.filter(e => e.date >= '2026-02-08' && e.date <= '2026-02-14').length,
-          transactions: recentMonzoExpenses.filter(e => e.date >= '2026-02-08' && e.date <= '2026-02-14').map(e => ({date: e.date, merchant: e.merchant, amount: e.amount}))
-        });
-        
-        if (recentMonzoExpenses.length > 0) {
-          console.log('📊 Monzo transactions:', recentMonzoExpenses.map(e => `${e.date} ${e.merchant} £${e.amount}`));
-        }
+        console.log(`Monzo: ${recentMonzoExpenses.length} expenses to display`);
 
         newMonzoCount = recentMonzoExpenses.length;
         newMonzoTotal = recentMonzoExpenses.reduce((sum, e) => sum + e.amount, 0);
@@ -200,23 +190,41 @@ export async function GET(request: Request) {
         expenses.push(...recentMonzoExpenses);
       } catch (error) {
         const message = error instanceof Error ? error.message : '';
-        if (message === 'MONZO_NOT_CONNECTED') {
-          // Return partial data with connection status
+        if (message === 'MONZO_NOT_CONNECTED' || message === 'MONZO_TOKEN_INVALID') {
+          // Even without live Monzo, try loading stored transactions from Blob
+          if (isBlobConfigured()) {
+            try {
+              const stored = await loadStoredTransactions();
+              if (stored.length > 0) {
+                const csvKeys = new Set(expenses.map(e => `${e.date}-${e.merchant}-${e.amount}`));
+                const storedNew = stored.filter(e => {
+                  const key = `${e.date}-${e.merchant}-${e.amount}`;
+                  return !csvKeys.has(key) && !(e.date >= '2026-02-01' && e.date <= '2026-02-07');
+                });
+                newMonzoCount = storedNew.length;
+                newMonzoTotal = storedNew.reduce((sum, e) => sum + e.amount, 0);
+                expenses.push(...storedNew);
+                console.log(`Blob fallback: loaded ${storedNew.length} stored transactions`);
+              }
+            } catch {
+              // Blob also failed, continue with CSV only
+            }
+          }
+
           expenses.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
           return NextResponse.json({
             expenses,
-            total: parseFloat((workLunchesTotal + qatarTripTotal).toFixed(2)),
+            total: parseFloat((workLunchesTotal + qatarTripTotal + newMonzoTotal).toFixed(2)),
             count: expenses.length,
             workLunches: { total: parseFloat(workLunchesTotal.toFixed(2)), count: workLunchesCount },
             qatarTrip: { total: parseFloat(qatarTripTotal.toFixed(2)), count: qatarTripCount },
-            newMonzo: { total: 0, count: 0 },
+            newMonzo: { total: parseFloat(newMonzoTotal.toFixed(2)), count: newMonzoCount },
             lastUpdated: new Date().toISOString(),
             cached: false,
             monzoConnected: false,
           });
         }
         console.error('Failed to fetch Monzo transactions:', error);
-        // Continue without Monzo data
       }
     }
 
@@ -225,7 +233,7 @@ export async function GET(request: Request) {
 
     const total = workLunchesTotal + qatarTripTotal + newMonzoTotal;
 
-    const responseData: ExpenseSummary = {
+    const responseData: ExpenseSummary & { monzoConnected?: boolean } = {
       expenses,
       total: parseFloat(total.toFixed(2)),
       count: expenses.length,
@@ -243,6 +251,7 @@ export async function GET(request: Request) {
       },
       lastUpdated: new Date().toISOString(),
       cached: false,
+      monzoConnected,
     };
 
     // Update cache

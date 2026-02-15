@@ -1,4 +1,5 @@
 import type { MonzoTransaction, Expense } from './types';
+import { forceRefreshToken } from './monzo-auth';
 
 // Monzo API configuration
 const MONZO_API_BASE = 'https://api.monzo.com';
@@ -7,10 +8,59 @@ const MAX_ITERATIONS = 10;
 const TRANSACTIONS_PER_PAGE = 100;
 
 /**
- * Filters Monzo transactions for work lunch expenses
+ * Checks if a Monzo transaction is located in London
+ * Uses postcode prefixes, city name, and region
+ */
+function isInLondon(txn: MonzoTransaction): boolean {
+  const addr = txn.merchant?.address;
+  if (!addr) return false;
+
+  // Online merchants have no physical location
+  if (txn.merchant?.online) return false;
+
+  const city = (addr.city || '').toLowerCase();
+  const region = (addr.region || '').toLowerCase();
+  const postcode = (addr.postcode || '').toUpperCase();
+
+  // Match by city/region name
+  const londonCityNames = ['london', 'city of london', 'greater london'];
+  if (londonCityNames.some(name => city.includes(name) || region.includes(name))) {
+    return true;
+  }
+
+  // Match by London postcode prefixes
+  // Central: EC, WC | East: E | North: N | NW | SE | SW | W
+  if (!postcode) return false;
+  const londonPrefixes = [
+    'EC', 'WC',                          // Central London
+    'E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8', 'E9', 'E10', 'E11', 'E12', 'E13', 'E14', 'E15', 'E16', 'E17', 'E18', 'E20',
+    'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'N8', 'N9', 'N10', 'N11', 'N12', 'N13', 'N14', 'N15', 'N16', 'N17', 'N18', 'N19', 'N20', 'N21', 'N22',
+    'NW1', 'NW2', 'NW3', 'NW4', 'NW5', 'NW6', 'NW7', 'NW8', 'NW9', 'NW10', 'NW11',
+    'SE1', 'SE2', 'SE3', 'SE4', 'SE5', 'SE6', 'SE7', 'SE8', 'SE9', 'SE10', 'SE11', 'SE12', 'SE13', 'SE14', 'SE15', 'SE16', 'SE17', 'SE18', 'SE19', 'SE20', 'SE21', 'SE22', 'SE23', 'SE24', 'SE25', 'SE26', 'SE27', 'SE28',
+    'SW1', 'SW2', 'SW3', 'SW4', 'SW5', 'SW6', 'SW7', 'SW8', 'SW9', 'SW10', 'SW11', 'SW12', 'SW13', 'SW14', 'SW15', 'SW16', 'SW17', 'SW18', 'SW19', 'SW20',
+    'W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12', 'W13', 'W14',
+  ];
+
+  // Extract the letter prefix from the postcode (e.g. "N1C 4QP" → "N1C", "EC1V 2NX" → "EC1")
+  // We match against the district part (letters + first digits)
+  const postcodeClean = postcode.replace(/\s+/g, '');
+  return londonPrefixes.some(prefix => {
+    // Must match at start and next char must be a letter (for sub-district) or space/digit boundary
+    if (!postcodeClean.startsWith(prefix)) return false;
+    const nextChar = postcodeClean[prefix.length];
+    // If prefix ends with digit (e.g. "N1"), next char must not be another digit
+    // to prevent "N1" matching "N10", "N11" etc.
+    if (nextChar && /\d/.test(prefix[prefix.length - 1]) && /\d/.test(nextChar)) return false;
+    return true;
+  });
+}
+
+/**
+ * Filters Monzo transactions for work lunch expenses in London
  * - Mon-Fri only (work days)
- * - Food/drink categories (eating_out, groceries, coffee, shopping)
- * - Debits only, excludes pot transfers and transport
+ * - Located in London (by postcode or city)
+ * - Food/drink categories (eating_out, groceries, coffee, shopping, general)
+ * - Debits only, excludes pot transfers
  */
 export function isLunchExpense(txn: MonzoTransaction): boolean {
   if (txn.amount >= 0) return false; // Only debits
@@ -23,28 +73,14 @@ export function isLunchExpense(txn: MonzoTransaction): boolean {
   const day = date.getDay();
   const isWorkDay = day >= 1 && day <= 5; // Mon-Fri
 
+  // Must be in London
+  if (!isInLondon(txn)) return false;
+
   // Food/drink categories - broad to catch miscategorized lunch places
   const foodCategories = ['eating_out', 'groceries', 'coffee', 'shopping', 'general'];
   const isFoodCategory = foodCategories.includes(txn.category);
 
-  const result = isWorkDay && isFoodCategory;
-  
-  // Debug log for Feb transactions
-  const txnDate = date.toISOString().split('T')[0];
-  if (txnDate >= '2026-02-08' && txnDate <= '2026-02-14') {
-    console.error('[Monzo Filter Debug] Feb 8-14 transaction:', {
-      date: txnDate,
-      merchant: merchantName,
-      amount: Math.abs(txn.amount) / 100,
-      category: txn.category,
-      dayOfWeek: day,
-      isWorkDay,
-      isFoodCategory,
-      passed: result
-    });
-  }
-
-  return result;
+  return isWorkDay && isFoodCategory;
 }
 
 /**
@@ -62,8 +98,8 @@ export function convertToExpense(txn: MonzoTransaction): Expense {
     currency: 'GBP',
     category: ['eating_out', 'coffee', 'groceries'].includes(txn.category) ? 'Meals & Entertainment' : 'General',
     expenseType: 'Lunch',
-    purpose: 'Working lunch - Kings Cross office',
-    location: txn.merchant?.address?.short_formatted || txn.merchant?.address?.city || '',
+    purpose: 'Working lunch',
+    location: txn.merchant?.address?.short_formatted || txn.merchant?.address?.city || 'London',
     receiptAttached: 'No',
     notes: `Monzo - ${txn.category}`
   };
@@ -77,7 +113,8 @@ export function convertToExpense(txn: MonzoTransaction): Expense {
  */
 export async function fetchMonzoTransactions(
   accessToken: string,
-  daysSince: number = 60
+  daysSince: number = 60,
+  _retried: boolean = false
 ): Promise<MonzoTransaction[]> {
   // Fetch last N days
   // Note: Monzo API allows up to 90 days after initial 5-minute auth window
@@ -85,15 +122,14 @@ export async function fetchMonzoTransactions(
   const since = new Date();
   since.setDate(since.getDate() - daysSince);
 
-  // Fetch with pagination (increased iterations for longer date ranges)
+  // Fetch with pagination - Monzo returns oldest first, so we paginate forward
+  // by updating `since` to the last transaction's ID/timestamp
   const allTransactions: MonzoTransaction[] = [];
-  let before = '';
+  let sinceParam = since.toISOString();
   let iteration = 0;
 
   while (iteration < MAX_ITERATIONS) {
-    const url = before
-      ? `${MONZO_API_BASE}/transactions?account_id=${ACCOUNT_ID}&since=${since.toISOString()}&before=${before}&limit=${TRANSACTIONS_PER_PAGE}&expand[]=merchant`
-      : `${MONZO_API_BASE}/transactions?account_id=${ACCOUNT_ID}&since=${since.toISOString()}&limit=${TRANSACTIONS_PER_PAGE}&expand[]=merchant`;
+    const url = `${MONZO_API_BASE}/transactions?account_id=${ACCOUNT_ID}&since=${sinceParam}&limit=${TRANSACTIONS_PER_PAGE}&expand[]=merchant`;
 
     const response = await fetch(url, {
       headers: {
@@ -105,6 +141,16 @@ export async function fetchMonzoTransactions(
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Monzo API error:', response.status, errorText);
+
+      // 401 = token evicted/invalid — retry once with a fresh token
+      if (response.status === 401 && !_retried) {
+        console.log('Monzo 401 — force-refreshing token and retrying...');
+        const freshToken = await forceRefreshToken();
+        return fetchMonzoTransactions(freshToken, daysSince, true);
+      }
+      if (response.status === 401) {
+        throw new Error('MONZO_TOKEN_INVALID');
+      }
 
       // Handle rate limiting (429) - wait and retry
       if (response.status === 429 && iteration < MAX_ITERATIONS - 1) {
@@ -128,13 +174,17 @@ export async function fetchMonzoTransactions(
     allTransactions.push(...transactions);
 
     if (transactions.length < TRANSACTIONS_PER_PAGE) {
-      break;
+      break; // Last page - fewer results than limit
     }
 
-    before = transactions[transactions.length - 1].created;
+    // Move `since` cursor forward to the last transaction's ID for next page
+    // Monzo accepts transaction IDs as the `since` param for precise pagination
+    const lastTxn = transactions[transactions.length - 1];
+    sinceParam = lastTxn.id || lastTxn.created;
     iteration++;
   }
 
+  console.log(`Monzo: fetched ${allTransactions.length} transactions in ${iteration + 1} pages`);
   return allTransactions;
 }
 

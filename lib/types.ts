@@ -25,7 +25,12 @@ export interface MonzoTransaction {
       city?: string;
       short_formatted?: string;
       postcode?: string;
+      region?: string;
+      country?: string;
+      latitude?: number;
+      longitude?: number;
     };
+    online?: boolean;
   };
   category: string;
   notes?: string;

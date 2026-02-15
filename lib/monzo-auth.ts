@@ -107,48 +107,84 @@ export async function refreshAccessToken(refreshToken: string): Promise<TokenSto
 }
 
 /**
- * Get valid access token (refreshes if expired).
- * Checks cookies first, then falls back to env vars.
+ * Get valid access token. Uses cached token if still valid, refreshes only when needed.
+ * On 401 from Monzo API, call forceRefresh() then retry.
  */
 export async function getValidAccessToken(): Promise<string> {
-  // 1. Try cookies first (seamless OAuth flow)
-  const cookieTokens = await getTokensFromCookies();
-  if (cookieTokens) {
-    tokenCache = cookieTokens;
-
+  // 1. Return in-memory cached token if not expired
+  if (tokenCache) {
     const fiveMinutesFromNow = Date.now() + (5 * 60 * 1000);
-    if (cookieTokens.expiresAt < fiveMinutesFromNow) {
-      console.log('Cookie token expired or expiring soon, refreshing...');
-      tokenCache = await refreshAccessToken(cookieTokens.refreshToken);
+    if (tokenCache.expiresAt > fiveMinutesFromNow) {
+      return tokenCache.accessToken;
     }
-
-    return tokenCache.accessToken;
+    // Token expiring soon — refresh it
+    try {
+      tokenCache = await refreshAccessToken(tokenCache.refreshToken);
+      return tokenCache.accessToken;
+    } catch {
+      tokenCache = null; // Clear stale cache
+    }
   }
 
-  // 2. Fall back to env vars
+  // 2. Try cookies (first load or after cache cleared)
+  const cookieTokens = await getTokensFromCookies();
+  if (cookieTokens) {
+    const fiveMinutesFromNow = Date.now() + (5 * 60 * 1000);
+    if (cookieTokens.expiresAt > fiveMinutesFromNow) {
+      tokenCache = cookieTokens;
+      return tokenCache.accessToken;
+    }
+    // Cookie token expired — refresh
+    try {
+      tokenCache = await refreshAccessToken(cookieTokens.refreshToken);
+      return tokenCache.accessToken;
+    } catch (refreshError) {
+      console.error('Token refresh failed:', refreshError);
+      throw new Error('MONZO_NOT_CONNECTED');
+    }
+  }
+
+  // 3. Fall back to env vars
   const envRefreshToken = process.env.MONZO_REFRESH_TOKEN;
   const envAccessToken = process.env.MONZO_ACCESS_TOKEN;
 
-  if (envRefreshToken && envAccessToken) {
-    if (!tokenCache) {
-      tokenCache = {
-        accessToken: envAccessToken,
-        refreshToken: envRefreshToken,
-        expiresAt: Date.now() + (5 * 60 * 60 * 1000),
-      };
+  if (envRefreshToken) {
+    try {
+      tokenCache = await refreshAccessToken(envRefreshToken);
+      return tokenCache.accessToken;
+    } catch {
+      // Fall through
     }
-
-    const fiveMinutesFromNow = Date.now() + (5 * 60 * 1000);
-    if (tokenCache.expiresAt < fiveMinutesFromNow) {
-      console.log('Access token expired or expiring soon, refreshing...');
-      tokenCache = await refreshAccessToken(tokenCache.refreshToken);
-    }
-
-    return tokenCache.accessToken;
   }
 
   if (envAccessToken) {
     return envAccessToken;
+  }
+
+  throw new Error('MONZO_NOT_CONNECTED');
+}
+
+/**
+ * Force-refresh the token (called after a 401 from Monzo API).
+ * Returns fresh access token or throws.
+ */
+export async function forceRefreshToken(): Promise<string> {
+  // Try cookie refresh token
+  const cookieTokens = await getTokensFromCookies();
+  if (cookieTokens) {
+    try {
+      tokenCache = await refreshAccessToken(cookieTokens.refreshToken);
+      return tokenCache.accessToken;
+    } catch {
+      tokenCache = null;
+      throw new Error('MONZO_NOT_CONNECTED');
+    }
+  }
+
+  const envRefreshToken = process.env.MONZO_REFRESH_TOKEN;
+  if (envRefreshToken) {
+    tokenCache = await refreshAccessToken(envRefreshToken);
+    return tokenCache.accessToken;
   }
 
   throw new Error('MONZO_NOT_CONNECTED');

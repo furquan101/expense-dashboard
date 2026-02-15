@@ -23,37 +23,18 @@ export async function GET(request: Request) {
 
     // Generate CSRF state token
     const state = crypto.randomBytes(16).toString('hex');
-    
-    console.error('[OAuth Debug] Setup - generating state:', {
-      state: state.substring(0, 8) + '...',
-      nodeEnv: process.env.NODE_ENV,
-      requestUrl: request.url
-    });
 
     // Store state in cookie for validation in callback
     const cookieStore = await cookies();
-    const cookieOptions = {
+    cookieStore.set('monzo_oauth_state', state, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax' as const,
+      sameSite: 'lax',
       path: '/',
       maxAge: 600, // 10 minutes
-    };
-    
-    cookieStore.set('monzo_oauth_state', state, cookieOptions);
-    
-    console.error('[OAuth Debug] Setup - state cookie set:', {
-      cookieName: 'monzo_oauth_state',
-      options: cookieOptions
     });
 
     const authUrl = getAuthorizationUrl(state);
-    
-    console.error('[OAuth Debug] Setup - redirecting to Monzo:', {
-      authUrlDomain: new URL(authUrl).hostname,
-      stateInUrl: authUrl.includes(state)
-    });
-
     return NextResponse.redirect(authUrl);
   } catch (error) {
     console.error('Setup error:', error);

@@ -17,15 +17,6 @@ export async function GET(request: Request) {
     const state = searchParams.get('state');
     const error = searchParams.get('error');
     const baseUrl = new URL(request.url).origin;
-    
-    console.error('[OAuth Debug] Callback received:', {
-      hasCode: !!code,
-      hasState: !!state,
-      statePreview: state ? state.substring(0, 8) + '...' : null,
-      hasError: !!error,
-      requestUrl: request.url,
-      origin: baseUrl
-    });
 
     if (error) {
       return NextResponse.redirect(`${baseUrl}/?auth_error=${encodeURIComponent(error)}`);
@@ -37,36 +28,10 @@ export async function GET(request: Request) {
 
     // Validate CSRF state
     const cookieStore = await cookies();
-    const allCookies = cookieStore.getAll();
     const expectedState = cookieStore.get('monzo_oauth_state')?.value;
     
-    // Debug logging
-    console.error('[OAuth Debug] Callback state validation:', {
-      receivedState: state,
-      expectedState: expectedState,
-      hasReceivedState: !!state,
-      hasExpectedState: !!expectedState,
-      statesMatch: state === expectedState,
-      allCookieNames: allCookies.map(c => c.name),
-      totalCookies: allCookies.length,
-      requestUrl: request.url,
-      origin: baseUrl
-    });
-    
     if (!state || !expectedState || state !== expectedState) {
-      const reason = !state ? 'no_state_param' : !expectedState ? 'no_cookie' : 'mismatch';
-      console.error('[OAuth Debug] State validation FAILED:', reason);
-      
-      // Return detailed error for debugging
-      return NextResponse.json({
-        error: 'invalid_state',
-        debug: {
-          reason,
-          receivedState: state ? state.substring(0, 8) + '...' : null,
-          expectedState: expectedState ? expectedState.substring(0, 8) + '...' : null,
-          cookiesFound: allCookies.map(c => c.name)
-        }
-      }, { status: 400 });
+      return NextResponse.redirect(`${baseUrl}/?auth_error=invalid_state`);
     }
 
     // Clear the state cookie
