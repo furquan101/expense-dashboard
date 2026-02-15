@@ -13,14 +13,19 @@ const TRANSACTIONS_PER_PAGE = 100;
  */
 function isInLondon(txn: MonzoTransaction): boolean {
   const addr = txn.merchant?.address;
-  if (!addr) return false;
 
-  // Online merchants have no physical location
-  if (txn.merchant?.online) return false;
+  // No address data = assume local (many London merchants lack address metadata)
+  if (!addr) return true;
+
+  // Online merchants are valid lunch expenses (Deliveroo, Uber Eats, etc.)
+  // Don't filter them out — the category filter handles relevance
 
   const city = (addr.city || '').toLowerCase();
   const region = (addr.region || '').toLowerCase();
   const postcode = (addr.postcode || '').toUpperCase();
+
+  // If no city AND no postcode data, can't determine location — assume local
+  if (!city && !region && !postcode) return true;
 
   // Match by city/region name
   const londonCityNames = ['london', 'city of london', 'greater london'];

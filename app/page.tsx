@@ -5,6 +5,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogAction,
+  AlertDialogCancel,
+} from '@/components/ui/alert-dialog';
 import type { Expense, ExpenseSummary } from '@/lib/types';
 
 type ExpenseData = ExpenseSummary & { monzoConnected?: boolean };
@@ -595,13 +604,28 @@ export default function Dashboard() {
             Designed and developed by Furquan Ahmad
           </p>
           {monzoConnected === true && (
-            <button
-              onClick={handleDisconnect}
-              disabled={disconnecting}
-              className="text-xs text-[#717171] hover:text-[#aaaaaa] transition-colors cursor-pointer"
-            >
-              {disconnecting ? 'Disconnecting...' : 'Disconnect Monzo'}
-            </button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <button
+                  disabled={disconnecting}
+                  className="text-xs text-[#717171] hover:text-[#aaaaaa] transition-colors cursor-pointer"
+                >
+                  {disconnecting ? 'Disconnecting...' : 'Disconnect Monzo'}
+                </button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogTitle>Disconnect Monzo?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  You&apos;ll need to re-authorize with Monzo to reconnect.
+                </AlertDialogDescription>
+                <div className="flex justify-end gap-3 mt-4">
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDisconnect}>
+                    Disconnect
+                  </AlertDialogAction>
+                </div>
+              </AlertDialogContent>
+            </AlertDialog>
           )}
           {monzoConnected === false && (
             <a
