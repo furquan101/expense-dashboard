@@ -29,16 +29,18 @@ export async function GET(request: Request) {
     // Validate CSRF state
     const cookieStore = await cookies();
     const expectedState = cookieStore.get('monzo_oauth_state')?.value;
-    
+    const redirectUri = cookieStore.get('monzo_redirect_uri')?.value;
+
     if (!state || !expectedState || state !== expectedState) {
       return NextResponse.redirect(`${baseUrl}/?auth_error=invalid_state`);
     }
 
-    // Clear the state cookie
+    // Clear the cookies
     cookieStore.delete('monzo_oauth_state');
+    cookieStore.delete('monzo_redirect_uri');
 
-    // Exchange code for tokens
-    const tokens = await exchangeCodeForTokens(code);
+    // Exchange code for tokens (use stored redirect URI for consistency)
+    const tokens = await exchangeCodeForTokens(code, redirectUri);
 
     // Save tokens to encrypted cookies
     const expiresIn = Math.floor((tokens.expiresAt - Date.now()) / 1000);

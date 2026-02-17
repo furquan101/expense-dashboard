@@ -29,7 +29,7 @@ const MONZO_REDIRECT_URI = process.env.MONZO_REDIRECT_URI || '';
 /**
  * Exchange authorization code for tokens (one-time setup)
  */
-export async function exchangeCodeForTokens(code: string): Promise<TokenStorage> {
+export async function exchangeCodeForTokens(code: string, redirectUri?: string): Promise<TokenStorage> {
   const response = await fetch('https://api.monzo.com/oauth2/token', {
     method: 'POST',
     headers: {
@@ -39,7 +39,7 @@ export async function exchangeCodeForTokens(code: string): Promise<TokenStorage>
       grant_type: 'authorization_code',
       client_id: MONZO_CLIENT_ID,
       client_secret: MONZO_CLIENT_SECRET,
-      redirect_uri: MONZO_REDIRECT_URI,
+      redirect_uri: redirectUri || MONZO_REDIRECT_URI,
       code: code,
     }),
   });
@@ -204,10 +204,10 @@ export async function hasValidTokens(): Promise<boolean> {
 /**
  * Get OAuth authorization URL for initial setup
  */
-export function getAuthorizationUrl(state: string = 'random_state'): string {
+export function getAuthorizationUrl(state: string = 'random_state', redirectUri?: string): string {
   const params = new URLSearchParams({
     client_id: MONZO_CLIENT_ID,
-    redirect_uri: MONZO_REDIRECT_URI,
+    redirect_uri: redirectUri || MONZO_REDIRECT_URI,
     response_type: 'code',
     state: state,
   });
