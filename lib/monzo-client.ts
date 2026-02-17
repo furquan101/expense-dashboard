@@ -7,6 +7,13 @@ const ACCOUNT_ID = 'acc_0000AlrlMJPONVy6d8Mbzu';
 const MAX_ITERATIONS = 10;
 const TRANSACTIONS_PER_PAGE = 100;
 
+// Explicit exclusion list for personal contacts/P2P merchant names
+// Add merchant names here that should never appear as lunch expenses
+const EXCLUDED_MERCHANTS = [
+  'Furquan',
+  'Amee',
+];
+
 /**
  * Checks if a Monzo transaction is located in London
  * Uses postcode prefixes, city name, and region
@@ -120,11 +127,23 @@ export function isLunchExpense(txn: MonzoTransaction): boolean {
     return false; // Exclude transactions without merchants (likely P2P)
   }
 
+  // Exclude transactions from the explicit exclusion list
+  if (EXCLUDED_MERCHANTS.includes(merchantName)) {
+    return false; // Explicitly excluded personal contact
+  }
+
   // Exclude transactions where merchant name looks like a person's name
-  // (e.g., "John Smith", typically has a space and capitalized words)
-  const namePattern = /^[A-Z][a-z]+ [A-Z][a-z]+$/;
-  if (namePattern.test(merchantName)) {
+  // Two-word names (e.g., "John Smith")
+  const twoWordNamePattern = /^[A-Z][a-z]+ [A-Z][a-z]+$/;
+  if (twoWordNamePattern.test(merchantName)) {
     return false; // Likely a person-to-person payment
+  }
+
+  // Single-word names that look like person first names (proper case, 2-15 chars, no numbers/symbols)
+  // Most legitimate businesses have longer names, special chars, or multiple words
+  const singleWordNamePattern = /^[A-Z][a-z]{1,14}$/;
+  if (singleWordNamePattern.test(merchantName)) {
+    return false; // Likely a person's first name (e.g., "Furquan", "Amee")
   }
 
   // Check day of week (Mon-Fri for office lunches)
