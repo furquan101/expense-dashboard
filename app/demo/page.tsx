@@ -112,8 +112,16 @@ export default function DemoPage() {
   const qatarTripTotal = qatarTrip.reduce((sum, e) => sum + e.amount, 0);
 
   const INITIAL_SHOW = 5;
-  const displayedWorkLunches = showAllWorkLunches ? workLunches : workLunches.slice(0, INITIAL_SHOW);
-  const displayedQatar = showAllQatar ? qatarTrip : qatarTrip.slice(0, INITIAL_SHOW);
+
+  const displayedWorkLunches = useMemo(() =>
+    showAllWorkLunches ? workLunches : workLunches.slice(0, INITIAL_SHOW),
+    [showAllWorkLunches, workLunches]
+  );
+
+  const displayedQatar = useMemo(() =>
+    showAllQatar ? qatarTrip : qatarTrip.slice(0, INITIAL_SHOW),
+    [showAllQatar, qatarTrip]
+  );
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] p-4 sm:p-6 md:p-8">
