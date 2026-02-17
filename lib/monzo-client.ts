@@ -72,20 +72,59 @@ export function isLunchExpense(txn: MonzoTransaction): boolean {
   // In Monzo API: negative = debit (expense), positive = credit (income)
   if (txn.amount >= 0) return false; // Exclude all incoming money
 
-  // Skip internal transfers (pots, savings, etc.)
-  const merchantName = txn.merchant?.name || txn.description || '';
-  const lowerName = merchantName.toLowerCase();
-  if (lowerName.includes('pot_') ||
-      lowerName.includes('transfer') ||
-      lowerName.includes('payment from') ||
-      lowerName.includes('bank transfer')) {
+  // Get merchant and description for filtering
+  const merchantName = txn.merchant?.name || '';
+  const description = txn.description || '';
+  const lowerMerchant = merchantName.toLowerCase();
+  const lowerDesc = description.toLowerCase();
+  const combined = `${lowerMerchant} ${lowerDesc}`;
+
+  // Exclude all types of incoming transactions and transfers
+  const excludePatterns = [
+    // Internal transfers
+    'pot_', 'pot transfer', 'savings',
+    // Bank transfers
+    'bank transfer', 'faster payment', 'bacs',
+    // P2P payments
+    'payment from', 'sent from', 'received from',
+    'transfer from', 'paid you', 'sent you',
+    // Refunds and credits
+    'refund', 'cashback', 'credit', 'reversal',
+    // Salary and income
+    'salary', 'wage', 'payroll', 'income',
+    // Other incoming
+    'deposit', 'interest', 'dividend'
+  ];
+
+  for (const pattern of excludePatterns) {
+    if (combined.includes(pattern)) {
+      return false;
+    }
+  }
+
+  // Exclude specific transaction schemes that indicate transfers/incoming
+  const excludeSchemes = [
+    'uk_retail_pot',           // Pot transfers
+    'payport_faster_payments', // Bank transfers
+    'bacs',                    // Direct debits/credits
+    'faster_payments'          // Bank transfers
+  ];
+
+  if (excludeSchemes.includes(txn.scheme || '')) {
     return false;
   }
 
-  // Exclude peer-to-peer payments and refunds
-  if (txn.scheme === 'uk_retail_pot' ||
-      txn.description?.toLowerCase().includes('refund')) {
-    return false;
+  // ONLY include transactions with actual merchants (not person-to-person)
+  // P2P transactions typically don't have a merchant object
+  if (!txn.merchant || !txn.merchant.name) {
+    return false; // Exclude transactions without merchants (likely P2P)
+  }
+
+  // Exclude transactions where merchant name looks like a person's name
+  // (e.g., "John Smith", typically has a space and capitalized words)
+  const namePattern = /^[A-Z][a-z]+ [A-Z][a-z]+$/;
+  if (namePattern.test(merchantName)) {
+    return false; // Likely a person-to-person payment
   }
 
   // Check day of week (Mon-Fri for office lunches)
