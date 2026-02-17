@@ -34,6 +34,7 @@ export interface MonzoTransaction {
   };
   category: string;
   notes?: string;
+  scheme?: string; // Transaction scheme (e.g., 'uk_retail_pot', 'payport_faster_payments')
 }
 
 export interface ExpenseSummary {
