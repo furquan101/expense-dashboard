@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
@@ -89,12 +89,23 @@ export default function DemoPage() {
   const [showAllQatar, setShowAllQatar] = useState(false);
 
   const data = DEMO_DATA;
-  const workLunches = data.expenses.filter(e => !(e.date >= '2026-02-01' && e.date <= '2026-02-07'));
-  const qatarTrip = data.expenses.filter(e => e.date >= '2026-02-01' && e.date <= '2026-02-07');
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const recentTransactions = data.expenses.filter(e => e.date >= thirtyDaysAgo.toISOString().split('T')[0]);
+  const workLunches = useMemo(() =>
+    data.expenses.filter(e => !(e.date >= '2026-02-01' && e.date <= '2026-02-07')),
+    [data.expenses]
+  );
+
+  const qatarTrip = useMemo(() =>
+    data.expenses.filter(e => e.date >= '2026-02-01' && e.date <= '2026-02-07'),
+    [data.expenses]
+  );
+
+  const recentTransactions = useMemo(() => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const dateStr = thirtyDaysAgo.toISOString().split('T')[0];
+    return data.expenses.filter(e => e.date >= dateStr);
+  }, [data.expenses]);
 
   const workLunchesTotal = workLunches.reduce((sum, e) => sum + e.amount, 0);
   const recentTransactionsTotal = recentTransactions.reduce((sum, e) => sum + e.amount, 0);
