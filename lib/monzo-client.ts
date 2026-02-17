@@ -10,8 +10,7 @@ const TRANSACTIONS_PER_PAGE = 100;
 // Explicit exclusion list for personal contacts/P2P merchant names
 // Add merchant names here that should never appear as lunch expenses
 const EXCLUDED_MERCHANTS = [
-  'Furquan',
-  'Amee',
+  'Furquan', // Personal contact - P2P payments
 ];
 
 /**
@@ -133,18 +132,16 @@ export function isLunchExpense(txn: MonzoTransaction): boolean {
   }
 
   // Exclude transactions where merchant name looks like a person's name
-  // Two-word names (e.g., "John Smith")
+  // Two-word names with proper capitalization (e.g., "John Smith")
+  // This pattern catches common P2P payment formats
   const twoWordNamePattern = /^[A-Z][a-z]+ [A-Z][a-z]+$/;
   if (twoWordNamePattern.test(merchantName)) {
     return false; // Likely a person-to-person payment
   }
 
-  // Single-word names that look like person first names (proper case, 2-15 chars, no numbers/symbols)
-  // Most legitimate businesses have longer names, special chars, or multiple words
-  const singleWordNamePattern = /^[A-Z][a-z]{1,14}$/;
-  if (singleWordNamePattern.test(merchantName)) {
-    return false; // Likely a person's first name (e.g., "Furquan", "Amee")
-  }
+  // Note: We don't filter single-word names as they could be legitimate shops
+  // (e.g., "Amee", "Pret", "Tesco"). Use the EXCLUDED_MERCHANTS list above
+  // for specific personal contacts you want to exclude.
 
   // Check day of week (Mon-Fri for office lunches)
   const date = new Date(txn.created);
