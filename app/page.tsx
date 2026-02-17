@@ -312,6 +312,13 @@ export default function Dashboard() {
   const lastUpdate = data?.lastUpdated ? new Date(data.lastUpdated).toLocaleTimeString() : '';
 
   // Separate expenses by category
+  // Calculate 30 days ago date once (stable across renders to prevent hydration issues)
+  const thirtyDaysAgoStr = useMemo(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date.toISOString().split('T')[0];
+  }, []); // Empty deps = only calculated once
+
   // Memoize expensive filter operations to avoid recomputing on every render
   const { workLunches, recentTransactions, qatarTrip, workLunchesTotal, recentTransactionsTotal, qatarTripTotal } = useMemo(() => {
     const expenses = data?.expenses || [];
@@ -322,10 +329,6 @@ export default function Dashboard() {
     });
 
     // Recent transactions (last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
-
     const recentTransactionsFiltered = expenses.filter(e => {
       return e.date >= thirtyDaysAgoStr;
     });
@@ -348,7 +351,7 @@ export default function Dashboard() {
       recentTransactionsTotal: recentTransactionsSum,
       qatarTripTotal: qatarTripSum
     };
-  }, [data?.expenses]);
+  }, [data?.expenses, thirtyDaysAgoStr]);
 
   // Show limited items
   const INITIAL_SHOW = 5;
