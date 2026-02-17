@@ -68,10 +68,25 @@ function isInLondon(txn: MonzoTransaction): boolean {
  * - Debits only, excludes pot transfers
  */
 export function isLunchExpense(txn: MonzoTransaction): boolean {
-  if (txn.amount >= 0) return false; // Only debits
+  // CRITICAL: Only include expenses (money going OUT), not income
+  // In Monzo API: negative = debit (expense), positive = credit (income)
+  if (txn.amount >= 0) return false; // Exclude all incoming money
 
+  // Skip internal transfers (pots, savings, etc.)
   const merchantName = txn.merchant?.name || txn.description || '';
-  if (merchantName.toLowerCase().includes('pot_')) return false; // Skip pot transfers
+  const lowerName = merchantName.toLowerCase();
+  if (lowerName.includes('pot_') ||
+      lowerName.includes('transfer') ||
+      lowerName.includes('payment from') ||
+      lowerName.includes('bank transfer')) {
+    return false;
+  }
+
+  // Exclude peer-to-peer payments and refunds
+  if (txn.scheme === 'uk_retail_pot' ||
+      txn.description?.toLowerCase().includes('refund')) {
+    return false;
+  }
 
   // Check day of week (Mon-Fri for office lunches)
   const date = new Date(txn.created);
