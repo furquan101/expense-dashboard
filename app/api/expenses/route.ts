@@ -129,6 +129,11 @@ export async function GET(request: Request) {
         ...cachedData.data,
         cached: true,
         cacheAge: Math.floor((now - cachedData.timestamp) / 1000),
+      }, {
+        headers: {
+          'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
+          'CDN-Cache-Control': 'max-age=300'
+        }
       });
     }
 
@@ -222,6 +227,11 @@ export async function GET(request: Request) {
             lastUpdated: new Date().toISOString(),
             cached: false,
             monzoConnected: false,
+          }, {
+            headers: {
+              'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
+              'CDN-Cache-Control': 'max-age=300'
+            }
           });
         }
         console.error('Failed to fetch Monzo transactions:', error);
@@ -260,7 +270,12 @@ export async function GET(request: Request) {
       timestamp: Date.now(),
     };
 
-    return NextResponse.json(responseData);
+    return NextResponse.json(responseData, {
+      headers: {
+        'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
+        'CDN-Cache-Control': 'max-age=300'
+      }
+    });
   } catch (error) {
     console.error('Error reading expenses:', error);
     return NextResponse.json(

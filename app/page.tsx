@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -38,24 +38,32 @@ function AnimatedNumber({ value, decimals = 2 }: { value: number; decimals?: num
 
   useEffect(() => {
     setIsAnimating(true);
-    const duration = 800;
-    const steps = 30;
-    const stepValue = value / steps;
-    const stepDuration = duration / steps;
+    const duration = 800; // ms
+    const startTime = Date.now();
+    const startValue = displayValue;
+    let animationFrame: number;
 
-    let currentStep = 0;
-    const timer = setInterval(() => {
-      currentStep++;
-      setDisplayValue(stepValue * currentStep);
+    const animate = () => {
+      const elapsed = Date.now() - startTime;
+      const progress = Math.min(elapsed / duration, 1);
 
-      if (currentStep >= steps) {
+      // Ease-out cubic for smooth deceleration
+      const easeProgress = 1 - Math.pow(1 - progress, 3);
+      const currentValue = startValue + (value - startValue) * easeProgress;
+
+      setDisplayValue(currentValue);
+
+      if (progress < 1) {
+        animationFrame = requestAnimationFrame(animate);
+      } else {
         setDisplayValue(value);
         setIsAnimating(false);
-        clearInterval(timer);
       }
-    }, stepDuration);
+    };
 
-    return () => clearInterval(timer);
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(animationFrame);
   }, [value]);
 
   return (
@@ -222,9 +230,44 @@ export default function Dashboard() {
       // Phase 2: Fetch Monzo data in background
       fetchData(false, true);
     });
-    // Auto-refresh every 5 minutes
-    const interval = setInterval(() => fetchData(false, true), 5 * 60 * 1000);
-    return () => clearInterval(interval);
+
+    // Auto-refresh every 5 minutes, but pause when tab is hidden (Page Visibility API)
+    let interval: NodeJS.Timeout | null = null;
+
+    const startPolling = () => {
+      if (interval) clearInterval(interval);
+      interval = setInterval(() => fetchData(false, true), 5 * 60 * 1000);
+    };
+
+    const stopPolling = () => {
+      if (interval) {
+        clearInterval(interval);
+        interval = null;
+      }
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        console.log('Tab hidden, pausing auto-refresh');
+        stopPolling();
+      } else {
+        console.log('Tab visible, resuming auto-refresh');
+        // Fetch immediately when tab becomes visible again
+        fetchData(false, true);
+        startPolling();
+      }
+    };
+
+    // Start initial polling
+    startPolling();
+
+    // Listen for visibility changes
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      stopPolling();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   if (loading && !data) {
@@ -259,29 +302,43 @@ export default function Dashboard() {
   const lastUpdate = data?.lastUpdated ? new Date(data.lastUpdated).toLocaleTimeString() : '';
 
   // Separate expenses by category
-  const workLunches = data?.expenses.filter(e => {
+  // Memoize expensive filter operations to avoid recomputing on every render
+  const { workLunches, recentTransactions, qatarTrip, workLunchesTotal, recentTransactionsTotal, qatarTripTotal } = useMemo(() => {
+    const expenses = data?.expenses || [];
+
     // All work lunches except Qatar trip dates
-    return !(e.date >= '2026-02-01' && e.date <= '2026-02-07');
-  }) || [];
+    const workLunchesFiltered = expenses.filter(e => {
+      return !(e.date >= '2026-02-01' && e.date <= '2026-02-07');
+    });
 
-  // Recent transactions (last 30 days)
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
+    // Recent transactions (last 30 days)
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
 
-  const recentTransactions = data?.expenses.filter(e => {
-    return e.date >= thirtyDaysAgoStr;
-  }) || [];
+    const recentTransactionsFiltered = expenses.filter(e => {
+      return e.date >= thirtyDaysAgoStr;
+    });
 
-  // Qatar Trip expenses (Feb 1-7, 2026)
-  const qatarTrip = data?.expenses.filter(e => {
-    return e.date >= '2026-02-01' && e.date <= '2026-02-07';
-  }) || [];
+    // Qatar Trip expenses (Feb 1-7, 2026)
+    const qatarTripFiltered = expenses.filter(e => {
+      return e.date >= '2026-02-01' && e.date <= '2026-02-07';
+    });
 
-  // Calculate totals for each section
-  const workLunchesTotal = workLunches.reduce((sum, e) => sum + e.amount, 0);
-  const recentTransactionsTotal = recentTransactions.reduce((sum, e) => sum + e.amount, 0);
-  const qatarTripTotal = qatarTrip.reduce((sum, e) => sum + e.amount, 0);
+    // Calculate totals for each section
+    const workLunchesSum = workLunchesFiltered.reduce((sum, e) => sum + e.amount, 0);
+    const recentTransactionsSum = recentTransactionsFiltered.reduce((sum, e) => sum + e.amount, 0);
+    const qatarTripSum = qatarTripFiltered.reduce((sum, e) => sum + e.amount, 0);
+
+    return {
+      workLunches: workLunchesFiltered,
+      recentTransactions: recentTransactionsFiltered,
+      qatarTrip: qatarTripFiltered,
+      workLunchesTotal: workLunchesSum,
+      recentTransactionsTotal: recentTransactionsSum,
+      qatarTripTotal: qatarTripSum
+    };
+  }, [data?.expenses]);
 
   // Show limited items
   const INITIAL_SHOW = 5;

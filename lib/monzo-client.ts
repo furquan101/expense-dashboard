@@ -39,31 +39,14 @@ function isInLondon(txn: MonzoTransaction): boolean {
     return true;
   }
 
-  // Match by London postcode prefixes
+  // Match by London postcode prefixes using regex (much faster than array iteration)
   // Central: EC, WC | East: E | North: N | NW | SE | SW | W
   if (!postcode) return false;
-  const londonPrefixes = [
-    'EC', 'WC',                          // Central London
-    'E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8', 'E9', 'E10', 'E11', 'E12', 'E13', 'E14', 'E15', 'E16', 'E17', 'E18', 'E20',
-    'N1', 'N2', 'N3', 'N4', 'N5', 'N6', 'N7', 'N8', 'N9', 'N10', 'N11', 'N12', 'N13', 'N14', 'N15', 'N16', 'N17', 'N18', 'N19', 'N20', 'N21', 'N22',
-    'NW1', 'NW2', 'NW3', 'NW4', 'NW5', 'NW6', 'NW7', 'NW8', 'NW9', 'NW10', 'NW11',
-    'SE1', 'SE2', 'SE3', 'SE4', 'SE5', 'SE6', 'SE7', 'SE8', 'SE9', 'SE10', 'SE11', 'SE12', 'SE13', 'SE14', 'SE15', 'SE16', 'SE17', 'SE18', 'SE19', 'SE20', 'SE21', 'SE22', 'SE23', 'SE24', 'SE25', 'SE26', 'SE27', 'SE28',
-    'SW1', 'SW2', 'SW3', 'SW4', 'SW5', 'SW6', 'SW7', 'SW8', 'SW9', 'SW10', 'SW11', 'SW12', 'SW13', 'SW14', 'SW15', 'SW16', 'SW17', 'SW18', 'SW19', 'SW20',
-    'W1', 'W2', 'W3', 'W4', 'W5', 'W6', 'W7', 'W8', 'W9', 'W10', 'W11', 'W12', 'W13', 'W14',
-  ];
 
-  // Extract the letter prefix from the postcode (e.g. "N1C 4QP" → "N1C", "EC1V 2NX" → "EC1")
-  // We match against the district part (letters + first digits)
-  const postcodeClean = postcode.replace(/\s+/g, '');
-  return londonPrefixes.some(prefix => {
-    // Must match at start and next char must be a letter (for sub-district) or space/digit boundary
-    if (!postcodeClean.startsWith(prefix)) return false;
-    const nextChar = postcodeClean[prefix.length];
-    // If prefix ends with digit (e.g. "N1"), next char must not be another digit
-    // to prevent "N1" matching "N10", "N11" etc.
-    if (nextChar && /\d/.test(prefix[prefix.length - 1]) && /\d/.test(nextChar)) return false;
-    return true;
-  });
+  // Single regex pattern matches all London postcode areas
+  // Covers: EC, WC, E1-E20, N1-N22, NW1-NW11, SE1-SE28, SW1-SW20, W1-W14
+  const londonPostcodePattern = /^(EC|WC|E|N|NW|SE|SW|W)\d+[A-Z]?\s*\d[A-Z]{2}$/i;
+  return londonPostcodePattern.test(postcode);
 }
 
 /**
@@ -200,6 +183,7 @@ export async function fetchMonzoTransactions(
   // Fetch with pagination - Monzo returns oldest first, so we paginate forward
   // by updating `since` to the last transaction's ID/timestamp
   const allTransactions: MonzoTransaction[] = [];
+  const seenIds = new Set<string>(); // Detect duplicates for early exit
   let sinceParam = since.toISOString();
   let iteration = 0;
 
@@ -227,11 +211,13 @@ export async function fetchMonzoTransactions(
         throw new Error('MONZO_TOKEN_INVALID');
       }
 
-      // Handle rate limiting (429) - wait and retry
+      // Handle rate limiting (429) - wait and retry with exponential backoff
       if (response.status === 429 && iteration < MAX_ITERATIONS - 1) {
         const retryAfter = response.headers.get('Retry-After');
-        const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : 2000;
-        console.log(`Rate limited, waiting ${waitTime}ms before retry`);
+        // Exponential backoff: 2s, 4s, 8s, 16s, max 30s
+        const backoffMs = Math.min(2000 * Math.pow(2, iteration), 30000);
+        const waitTime = retryAfter ? parseInt(retryAfter) * 1000 : backoffMs;
+        console.log(`Rate limited, waiting ${waitTime}ms before retry (iteration ${iteration})`);
         await new Promise(resolve => setTimeout(resolve, waitTime));
         continue; // Retry same request
       }
@@ -246,7 +232,24 @@ export async function fetchMonzoTransactions(
       break;
     }
 
-    allTransactions.push(...transactions);
+    // Check for duplicates and filter them out (early exit optimization)
+    let duplicateCount = 0;
+    const newTransactions = transactions.filter(txn => {
+      if (seenIds.has(txn.id)) {
+        duplicateCount++;
+        return false;
+      }
+      seenIds.add(txn.id);
+      return true;
+    });
+
+    // If entire page is duplicates, we've caught up - exit early
+    if (duplicateCount === transactions.length) {
+      console.log(`Monzo: All ${duplicateCount} transactions on page ${iteration + 1} were duplicates, stopping`);
+      break;
+    }
+
+    allTransactions.push(...newTransactions);
 
     if (transactions.length < TRANSACTIONS_PER_PAGE) {
       break; // Last page - fewer results than limit
