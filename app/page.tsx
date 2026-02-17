@@ -312,46 +312,30 @@ export default function Dashboard() {
   const lastUpdate = data?.lastUpdated ? new Date(data.lastUpdated).toLocaleTimeString() : '';
 
   // Separate expenses by category
-  // Calculate 30 days ago date once (stable across renders to prevent hydration issues)
-  const thirtyDaysAgoStr = useMemo(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - 30);
-    return date.toISOString().split('T')[0];
-  }, []); // Empty deps = only calculated once
-
-  // Memoize expensive filter operations to avoid recomputing on every render
-  const { workLunches, recentTransactions, qatarTrip, workLunchesTotal, recentTransactionsTotal, qatarTripTotal } = useMemo(() => {
-    const expenses = data?.expenses || [];
-
+  // All work lunches except Qatar trip dates
+  const workLunches = data?.expenses.filter(e => {
     // All work lunches except Qatar trip dates
-    const workLunchesFiltered = expenses.filter(e => {
-      return !(e.date >= '2026-02-01' && e.date <= '2026-02-07');
-    });
+    return !(e.date >= '2026-02-01' && e.date <= '2026-02-07');
+  }) || [];
 
-    // Recent transactions (last 30 days)
-    const recentTransactionsFiltered = expenses.filter(e => {
-      return e.date >= thirtyDaysAgoStr;
-    });
+  // Recent transactions (last 30 days)
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
 
-    // Qatar Trip expenses (Feb 1-7, 2026)
-    const qatarTripFiltered = expenses.filter(e => {
-      return e.date >= '2026-02-01' && e.date <= '2026-02-07';
-    });
+  const recentTransactions = data?.expenses.filter(e => {
+    return e.date >= thirtyDaysAgoStr;
+  }) || [];
 
-    // Calculate totals for each section
-    const workLunchesSum = workLunchesFiltered.reduce((sum, e) => sum + e.amount, 0);
-    const recentTransactionsSum = recentTransactionsFiltered.reduce((sum, e) => sum + e.amount, 0);
-    const qatarTripSum = qatarTripFiltered.reduce((sum, e) => sum + e.amount, 0);
+  // Qatar Trip expenses (Feb 1-7, 2026)
+  const qatarTrip = data?.expenses.filter(e => {
+    return e.date >= '2026-02-01' && e.date <= '2026-02-07';
+  }) || [];
 
-    return {
-      workLunches: workLunchesFiltered,
-      recentTransactions: recentTransactionsFiltered,
-      qatarTrip: qatarTripFiltered,
-      workLunchesTotal: workLunchesSum,
-      recentTransactionsTotal: recentTransactionsSum,
-      qatarTripTotal: qatarTripSum
-    };
-  }, [data?.expenses, thirtyDaysAgoStr]);
+  // Calculate totals for each section
+  const workLunchesTotal = workLunches.reduce((sum, e) => sum + e.amount, 0);
+  const recentTransactionsTotal = recentTransactions.reduce((sum, e) => sum + e.amount, 0);
+  const qatarTripTotal = qatarTrip.reduce((sum, e) => sum + e.amount, 0);
 
   // Show limited items
   const INITIAL_SHOW = 5;
