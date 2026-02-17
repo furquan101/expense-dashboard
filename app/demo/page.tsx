@@ -107,16 +107,6 @@ export default function DemoPage() {
   return (
     <div className="min-h-screen bg-[#0f0f0f] p-4 sm:p-6 md:p-8">
       <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-        {/* Demo Banner */}
-        <div className="bg-[#212121] border border-[#3f3f3f] rounded-lg p-4 text-center">
-          <p className="text-[#f1f1f1] font-medium">
-            🎭 Demo Mode - Sample data for demonstration
-          </p>
-          <p className="text-[#aaaaaa] text-sm mt-1">
-            <a href="/" className="underline hover:text-[#f1f1f1]">View live dashboard</a>
-          </p>
-        </div>
-
         {/* Header */}
         <div className="border-b border-[#3f3f3f] pb-4 sm:pb-6">
           <h1 className="text-3xl sm:text-4xl font-bold text-[#f1f1f1] tracking-tight">
