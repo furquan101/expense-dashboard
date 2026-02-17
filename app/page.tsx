@@ -339,16 +339,8 @@ export default function Dashboard() {
 
   // Show limited items
   const INITIAL_SHOW = 5;
-
-  const displayedWorkLunches = useMemo(() =>
-    showAllWorkLunches ? workLunches : workLunches.slice(0, INITIAL_SHOW),
-    [showAllWorkLunches, workLunches]
-  );
-
-  const displayedQatar = useMemo(() =>
-    showAllQatar ? qatarTrip : qatarTrip.slice(0, INITIAL_SHOW),
-    [showAllQatar, qatarTrip]
-  );
+  const displayedWorkLunches = showAllWorkLunches ? workLunches : workLunches.slice(0, INITIAL_SHOW);
+  const displayedQatar = showAllQatar ? qatarTrip : qatarTrip.slice(0, INITIAL_SHOW);
 
   return (
     <div className="min-h-screen bg-[#0f0f0f] p-4 sm:p-6 md:p-8">
