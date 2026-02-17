@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
@@ -33,14 +33,19 @@ function formatDate(dateString: string, dayString: string): string {
 
 // Animated number counter component
 function AnimatedNumber({ value, decimals = 2 }: { value: number; decimals?: number }) {
-  const [displayValue, setDisplayValue] = useState(0);
+  const [displayValue, setDisplayValue] = useState(value);
   const [isAnimating, setIsAnimating] = useState(false);
+  const prevValueRef = useRef(value);
 
   useEffect(() => {
+    // Only animate if value actually changed
+    if (prevValueRef.current === value) return;
+
     setIsAnimating(true);
     const duration = 800; // ms
     const startTime = Date.now();
-    const startValue = displayValue;
+    const startValue = prevValueRef.current;
+    const targetValue = value;
     let animationFrame: number;
 
     const animate = () => {
@@ -49,21 +54,26 @@ function AnimatedNumber({ value, decimals = 2 }: { value: number; decimals?: num
 
       // Ease-out cubic for smooth deceleration
       const easeProgress = 1 - Math.pow(1 - progress, 3);
-      const currentValue = startValue + (value - startValue) * easeProgress;
+      const currentValue = startValue + (targetValue - startValue) * easeProgress;
 
       setDisplayValue(currentValue);
 
       if (progress < 1) {
         animationFrame = requestAnimationFrame(animate);
       } else {
-        setDisplayValue(value);
+        setDisplayValue(targetValue);
         setIsAnimating(false);
+        prevValueRef.current = targetValue;
       }
     };
 
     animationFrame = requestAnimationFrame(animate);
 
-    return () => cancelAnimationFrame(animationFrame);
+    return () => {
+      if (animationFrame) {
+        cancelAnimationFrame(animationFrame);
+      }
+    };
   }, [value]);
 
   return (
