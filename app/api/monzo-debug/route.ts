@@ -17,10 +17,7 @@ interface DebugResult {
   filters: {
     isDebit: boolean;
     isPotTransfer: boolean;
-    hasKingsXPostcode: boolean;
-    hasKingsXKeyword: boolean;
-    isKingsX: boolean;
-    isExcluded: boolean;
+    isInLondon: boolean;
     dayOfWeek: number;
     isWorkDay: boolean;
     isFoodCategory: boolean;
@@ -32,22 +29,22 @@ function debugTransaction(txn: MonzoTransaction): DebugResult {
   const merchantName = txn.merchant?.name || txn.description || '';
   const postcode = txn.merchant?.address?.postcode || '';
   const city = txn.merchant?.address?.city || '';
+  const region = txn.merchant?.address?.region || '';
   const shortFormatted = txn.merchant?.address?.short_formatted || '';
-  const fullLocation = `${merchantName} ${shortFormatted} ${postcode} ${city}`.toLowerCase();
+  const fullLocation = `${merchantName} ${shortFormatted} ${postcode} ${city} ${region}`.toLowerCase();
 
-  const kingsXPostcodes = ['n1c', 'wc1x', 'wc1h'];
-  const kingsXKeywords = ['kings cross', 'pancras', 'st pancras'];
-  const hasKingsXPostcode = kingsXPostcodes.some(pc => postcode.toLowerCase().includes(pc));
-  const hasKingsXKeyword = kingsXKeywords.some(kw => fullLocation.includes(kw));
-  const isKingsX = hasKingsXPostcode || hasKingsXKeyword;
-
-  const excludeAreas = ['basildon', 'ss15', 'e1 1', 'e1d', 'sw1', 'victoria', 'wc1b', 'wc2', 'shoreditch', 'whitechapel', 'southampton row'];
-  const isExcluded = excludeAreas.some(area => fullLocation.includes(area));
+  // Mirrors isInLondon() from monzo-client.ts
+  const londonCityNames = ['london', 'city of london', 'greater london'];
+  const matchesCityName = londonCityNames.some(name => city.toLowerCase().includes(name) || region.toLowerCase().includes(name));
+  const londonPostcodePattern = /^(EC|WC|E|N|NW|SE|SW|W)\d+[A-Z]?\s*\d[A-Z]{2}$/i;
+  const matchesPostcode = !!postcode && londonPostcodePattern.test(postcode);
+  // No address = assumed local (same logic as isInLondon)
+  const isInLondon = !city && !region && !postcode ? true : matchesCityName || matchesPostcode;
 
   const date = new Date(txn.created);
   const day = date.getDay();
-  const isWorkDay = day >= 1 && day <= 4;
-  const isFoodCategory = ['eating_out', 'groceries'].includes(txn.category);
+  const isWorkDay = day >= 1 && day <= 5; // Mon-Fri, matches isLunchExpense()
+  const isFoodCategory = ['eating_out', 'groceries', 'coffee', 'shopping', 'general'].includes(txn.category);
 
   return {
     transaction: {
@@ -61,10 +58,7 @@ function debugTransaction(txn: MonzoTransaction): DebugResult {
     filters: {
       isDebit: txn.amount < 0,
       isPotTransfer: merchantName.toLowerCase().includes('pot_'),
-      hasKingsXPostcode,
-      hasKingsXKeyword,
-      isKingsX,
-      isExcluded,
+      isInLondon,
       dayOfWeek: day,
       isWorkDay,
       isFoodCategory,
@@ -93,9 +87,8 @@ export async function GET() {
     failed.forEach(r => {
       if (!r.filters.isDebit) failureReasons['Not a debit'] = (failureReasons['Not a debit'] || 0) + 1;
       if (r.filters.isPotTransfer) failureReasons['Pot transfer'] = (failureReasons['Pot transfer'] || 0) + 1;
-      if (!r.filters.isKingsX) failureReasons['Not Kings Cross'] = (failureReasons['Not Kings Cross'] || 0) + 1;
-      if (r.filters.isExcluded) failureReasons['Excluded area'] = (failureReasons['Excluded area'] || 0) + 1;
-      if (!r.filters.isWorkDay) failureReasons['Not Mon-Thu'] = (failureReasons['Not Mon-Thu'] || 0) + 1;
+      if (!r.filters.isInLondon) failureReasons['Not in London'] = (failureReasons['Not in London'] || 0) + 1;
+      if (!r.filters.isWorkDay) failureReasons['Not a workday (Mon-Fri)'] = (failureReasons['Not a workday (Mon-Fri)'] || 0) + 1;
       if (!r.filters.isFoodCategory) failureReasons['Not food category'] = (failureReasons['Not food category'] || 0) + 1;
     });
 

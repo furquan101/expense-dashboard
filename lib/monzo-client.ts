@@ -211,6 +211,12 @@ export async function fetchMonzoTransactions(
         throw new Error('MONZO_TOKEN_INVALID');
       }
 
+      // 403 = Strong Customer Authentication required — token is valid but
+      // the app needs the user to re-approve access in the Monzo app
+      if (response.status === 403) {
+        throw new Error('MONZO_SCA_REQUIRED');
+      }
+
       // Handle rate limiting (429) - wait and retry with exponential backoff
       if (response.status === 429 && iteration < MAX_ITERATIONS - 1) {
         const retryAfter = response.headers.get('Retry-After');

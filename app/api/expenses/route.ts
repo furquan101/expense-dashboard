@@ -195,7 +195,10 @@ export async function GET(request: Request) {
         expenses.push(...recentMonzoExpenses);
       } catch (error) {
         const message = error instanceof Error ? error.message : '';
-        if (message === 'MONZO_NOT_CONNECTED' || message === 'MONZO_TOKEN_INVALID') {
+        const isAuthError = message === 'MONZO_NOT_CONNECTED' || message === 'MONZO_TOKEN_INVALID' || message === 'MONZO_SCA_REQUIRED';
+        const scaRequired = message === 'MONZO_SCA_REQUIRED';
+
+        if (isAuthError) {
           // Even without live Monzo, try loading stored transactions from Blob
           if (isBlobConfigured()) {
             try {
@@ -227,6 +230,7 @@ export async function GET(request: Request) {
             lastUpdated: new Date().toISOString(),
             cached: false,
             monzoConnected: false,
+            scaRequired,
           }, {
             headers: {
               'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',

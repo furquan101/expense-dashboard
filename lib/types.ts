@@ -56,4 +56,6 @@ export interface ExpenseSummary {
   lastUpdated: string;
   cached?: boolean;
   cacheAge?: number;
+  monzoConnected?: boolean;
+  scaRequired?: boolean;
 }

@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import type { Expense, ExpenseSummary } from '@/lib/types';
 
-type ExpenseData = ExpenseSummary & { monzoConnected?: boolean };
+type ExpenseData = ExpenseSummary & { monzoConnected?: boolean; scaRequired?: boolean };
 
 // Format date to readable format: "Mon, 3 Feb"
 function formatDate(dateString: string, dayString: string): string {
@@ -195,6 +195,7 @@ export default function Dashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [monzoConnected, setMonzoConnected] = useState<boolean | null>(null);
+  const [scaRequired, setScaRequired] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
 
   // Show more state
@@ -223,6 +224,7 @@ export default function Dashboard() {
       const json = await response.json();
 
       setMonzoConnected(json.monzoConnected === true);
+      setScaRequired(json.scaRequired === true);
       setData(json);
       setError(null);
       setLoading(false);
@@ -384,7 +386,13 @@ export default function Dashboard() {
                   Monzo Connected
                 </span>
               )}
-              {monzoConnected === false && (
+              {monzoConnected === false && scaRequired && (
+                <span className="inline-flex items-center gap-1.5 text-xs text-[#facc15]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#facc15] animate-pulse"></span>
+                  Monzo Re-auth Required
+                </span>
+              )}
+              {monzoConnected === false && !scaRequired && (
                 <span className="inline-flex items-center gap-1.5 text-xs text-[#f87171]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#f87171]"></span>
                   Monzo Disconnected
@@ -394,8 +402,33 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* SCA Re-auth Banner */}
+        {scaRequired && (
+          <div className="border border-[#4a3f1a] bg-[#2a2210] rounded-lg p-4 sm:p-6">
+            <div className="flex items-start gap-3 sm:gap-4">
+              <div className="text-2xl sm:text-3xl">🔐</div>
+              <div className="flex-1 space-y-3">
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-[#facc15] mb-1">
+                    Monzo Re-authentication Required
+                  </h3>
+                  <p className="text-[#aaaaaa] text-sm sm:text-base">
+                    Monzo's Strong Customer Authentication (SCA) has expired. Your token is valid but transaction access is blocked — recent transactions won't appear until you re-authenticate.
+                  </p>
+                </div>
+                <a
+                  href="/api/monzo-oauth/setup"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-[#facc15] text-[#0f0f0f] hover:bg-[#eab308] transition-colors font-medium text-sm"
+                >
+                  Re-authenticate with Monzo
+                </a>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Disconnected Banner */}
-        {monzoConnected === false && (
+        {monzoConnected === false && !scaRequired && (
           <div className="border border-[#4a2d2d] bg-[#2a1a1a] rounded-lg p-4 sm:p-6">
             <div className="flex items-start gap-3 sm:gap-4">
               <div className="text-2xl sm:text-3xl">⚠️</div>
