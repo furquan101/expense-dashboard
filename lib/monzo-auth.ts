@@ -183,8 +183,13 @@ export async function forceRefreshToken(): Promise<string> {
 
   const envRefreshToken = process.env.MONZO_REFRESH_TOKEN;
   if (envRefreshToken) {
-    tokenCache = await refreshAccessToken(envRefreshToken);
-    return tokenCache.accessToken;
+    try {
+      tokenCache = await refreshAccessToken(envRefreshToken);
+      return tokenCache.accessToken;
+    } catch {
+      tokenCache = null;
+      throw new Error('MONZO_TOKEN_INVALID');
+    }
   }
 
   throw new Error('MONZO_NOT_CONNECTED');

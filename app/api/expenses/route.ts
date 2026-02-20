@@ -238,7 +238,9 @@ export async function GET(request: Request) {
             }
           });
         }
+        // Unrecognized error — still means Monzo data unavailable
         console.error('Failed to fetch Monzo transactions:', error);
+        monzoConnected = false;
       }
     }
 
