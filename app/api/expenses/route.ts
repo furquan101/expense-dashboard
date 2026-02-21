@@ -182,9 +182,9 @@ export async function GET(request: Request) {
           return !csvKeys.has(key);
         });
 
-        // Exclude Qatar trip dates (Feb 1-7) as those are fully covered in CSV
+        // Only include Monzo transactions after the CSV's last date (Feb 7)
         const recentMonzoExpenses = newMonzoExpenses.filter(e => {
-          return !(e.date >= '2026-02-01' && e.date <= '2026-02-07');
+          return e.date > '2026-02-07';
         });
 
         console.log(`Monzo: ${recentMonzoExpenses.length} expenses to display`);
@@ -207,7 +207,7 @@ export async function GET(request: Request) {
                 const csvKeys = new Set(expenses.map(e => `${e.date}-${e.merchant}-${e.amount}`));
                 const storedNew = stored.filter(e => {
                   const key = `${e.date}-${e.merchant}-${e.amount}`;
-                  return !csvKeys.has(key) && !(e.date >= '2026-02-01' && e.date <= '2026-02-07');
+                  return !csvKeys.has(key) && e.date > '2026-02-07';
                 });
                 newMonzoCount = storedNew.length;
                 newMonzoTotal = storedNew.reduce((sum, e) => sum + e.amount, 0);
