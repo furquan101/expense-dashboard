@@ -846,20 +846,44 @@ export default function Dashboard() {
           {/* Work Lunches Section */}
           <AccordionItem
             value="work-lunches"
-            className="rounded-lg bg-[#212121] overflow-hidden transition-all border border-[#3f3f3f] hover:border-[#717171]"
+            className={`rounded-lg bg-[#212121] overflow-hidden transition-all border ${workCompletedMonths.size > 0 ? 'border-[#4ade80]/30 hover:border-[#4ade80]/60' : 'border-[#3f3f3f] hover:border-[#717171]'}`}
             style={{ transitionDuration: 'var(--duration-base)' }}
           >
             <AccordionTrigger
               className="hover:no-underline hover:bg-[#272727]/50 transition-colors p-4 sm:p-6 min-h-[44px]"
               style={{ transitionDuration: 'var(--duration-base)' }}
             >
-              <div className="text-left">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
-                  Work Lunches
-                </h2>
-                <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
-                  {workLunches.length} items · Kings Cross · £{workLunchesTotal.toFixed(2)}
-                </p>
+              <div className="flex items-center justify-between w-full pr-2">
+                <div className="text-left">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
+                    Work Lunches
+                  </h2>
+                  <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
+                    {workLunches.length} items · Kings Cross · £{workLunchesTotal.toFixed(2)}
+                  </p>
+                </div>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onPointerDown={e => e.stopPropagation()}
+                  onClick={e => { e.stopPropagation(); setMarkModal({ open: true, section: 'work' }); }}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); setMarkModal({ open: true, section: 'work' }); } }}
+                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#717171] ${
+                    workCompletedMonths.size > 0
+                      ? 'border-[#4ade80]/40 bg-[#4ade80]/10 text-[#4ade80]'
+                      : 'border-[#3f3f3f] text-[#aaaaaa] hover:border-[#717171] hover:text-[#f1f1f1]'
+                  }`}
+                  style={{ transitionDuration: '150ms' }}
+                >
+                  {workCompletedMonths.size > 0 ? (
+                    <>
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Completed
+                    </>
+                  ) : 'Mark Complete'}
+                </span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-4 sm:px-6 pb-4 sm:pb-6">
@@ -869,6 +893,7 @@ export default function Dashboard() {
                   <ExpenseCard
                     key={`${expense.date}-${expense.merchant}-${expense.amount}`}
                     expense={expense}
+                    completed={completedMonths.has(getYearMonth(expense.date))}
                   />
                 ))}
               </div>
@@ -888,7 +913,7 @@ export default function Dashboard() {
                     {displayedWorkLunches.map((expense, idx) => (
                       <TableRow
                         key={`${expense.date}-${expense.merchant}-${expense.amount}`}
-                        className="border-[#3f3f3f] hover:bg-[#272727] transition-colors"
+                        className={`border-[#3f3f3f] hover:bg-[#272727] transition-colors ${completedMonths.has(getYearMonth(expense.date)) ? 'opacity-40' : ''}`}
                         style={{
                           transitionDuration: 'var(--duration-fast)',
                           animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
