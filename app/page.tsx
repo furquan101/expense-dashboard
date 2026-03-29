@@ -308,18 +308,17 @@ function AnalyticsModal({
   expenses: Expense[];
   onClose: () => void;
 }) {
+  const [tab, setTab] = useState<'chart' | 'insights'>('chart');
   const [groupBy, setGroupBy] = useState<'week' | 'month'>('month');
 
   const chartData = useMemo(() => {
     if (!expenses.length) return [];
     const buckets: Record<string, number> = {};
-
     for (const e of expenses) {
       let key: string;
       if (groupBy === 'month') {
         key = e.date.substring(0, 7);
       } else {
-        // ISO week: find Monday of that week
         const d = new Date(e.date);
         const day = d.getDay() || 7;
         d.setDate(d.getDate() - day + 1);
@@ -327,11 +326,27 @@ function AnalyticsModal({
       }
       buckets[key] = (buckets[key] || 0) + e.amount;
     }
-
     return Object.entries(buckets)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([key, total]) => ({ key, total: parseFloat(total.toFixed(2)) }));
   }, [expenses, groupBy]);
+
+  const vendorData = useMemo(() => {
+    const map: Record<string, { total: number; visits: number }> = {};
+    for (const e of expenses) {
+      if (!map[e.merchant]) map[e.merchant] = { total: 0, visits: 0 };
+      map[e.merchant].total += e.amount;
+      map[e.merchant].visits += 1;
+    }
+    return Object.entries(map)
+      .map(([name, { total, visits }]) => ({
+        name,
+        total: parseFloat(total.toFixed(2)),
+        visits,
+        avg: parseFloat((total / visits).toFixed(2)),
+      }))
+      .sort((a, b) => b.total - a.total);
+  }, [expenses]);
 
   if (!open) return null;
 
@@ -344,6 +359,8 @@ function AnalyticsModal({
     return `${d.getDate()}/${d.getMonth() + 1}`;
   };
 
+  const maxVendorTotal = vendorData[0]?.total || 1;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -351,83 +368,107 @@ function AnalyticsModal({
         className="relative bg-[#1a1a1a] border border-[#3f3f3f] rounded-xl p-6 w-full max-w-2xl shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-5">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-[#f1f1f1] font-bold text-lg">Spending Analytics</h3>
-            <p className="text-[#717171] text-sm mt-0.5">Expenses over time</p>
+            <p className="text-[#717171] text-sm mt-0.5">{expenses.length} transactions</p>
           </div>
-          <div className="flex items-center gap-1 bg-[#212121] border border-[#3f3f3f] rounded-lg p-1">
-            {(['week', 'month'] as const).map(g => (
-              <button
-                key={g}
-                onClick={() => setGroupBy(g)}
-                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
-                  groupBy === g
-                    ? 'bg-[#f1f1f1] text-[#0f0f0f]'
-                    : 'text-[#717171] hover:text-[#aaaaaa]'
-                }`}
-                style={{ transitionDuration: '150ms' }}
-              >
-                {g.charAt(0).toUpperCase() + g.slice(1)}
-              </button>
-            ))}
-          </div>
+          {tab === 'chart' && (
+            <div className="flex items-center gap-1 bg-[#212121] border border-[#3f3f3f] rounded-lg p-1">
+              {(['week', 'month'] as const).map(g => (
+                <button
+                  key={g}
+                  onClick={() => setGroupBy(g)}
+                  className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                    groupBy === g ? 'bg-[#f1f1f1] text-[#0f0f0f]' : 'text-[#717171] hover:text-[#aaaaaa]'
+                  }`}
+                  style={{ transitionDuration: '150ms' }}
+                >
+                  {g.charAt(0).toUpperCase() + g.slice(1)}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
-        {chartData.length === 0 ? (
-          <div className="flex items-center justify-center h-[240px] text-[#717171] text-sm">No data</div>
-        ) : (
-          <div style={{ height: 240 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="analyticsGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#f1f1f1" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#f1f1f1" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#3f3f3f" vertical={false} />
-                <XAxis
-                  dataKey="key"
-                  tickFormatter={formatLabel}
-                  tick={{ fill: '#717171', fontSize: 11 }}
-                  axisLine={{ stroke: '#3f3f3f' }}
-                  tickLine={false}
-                  interval="preserveStartEnd"
-                />
-                <YAxis
-                  tickFormatter={(v: number) => `£${v}`}
-                  tick={{ fill: '#717171', fontSize: 11 }}
-                  axisLine={false}
-                  tickLine={false}
-                  width={52}
-                />
-                <Tooltip
-                  contentStyle={{
-                    background: '#1a1a1a',
-                    border: '1px solid #3f3f3f',
-                    borderRadius: '8px',
-                    color: '#f1f1f1',
-                    fontSize: 13,
-                  }}
-                  formatter={(value) => [`£${(value as number).toFixed(2)}`, 'Spent']}
-                  labelFormatter={(label) => formatLabel(label as string)}
-                  cursor={{ stroke: '#717171', strokeWidth: 1, strokeDasharray: '3 3' }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="total"
-                  stroke="#f1f1f1"
-                  strokeWidth={2}
-                  fill="url(#analyticsGrad)"
-                  dot={{ fill: '#0f0f0f', stroke: '#f1f1f1', strokeWidth: 2, r: 4 }}
-                  activeDot={{ fill: '#f1f1f1', stroke: '#0f0f0f', strokeWidth: 2, r: 5 }}
-                  isAnimationActive={true}
-                  animationDuration={500}
-                  animationEasing="ease-out"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
+        {/* Tabs */}
+        <div className="flex gap-1 bg-[#212121] border border-[#3f3f3f] rounded-lg p-1 mb-4">
+          {(['chart', 'insights'] as const).map(t => (
+            <button
+              key={t}
+              onClick={() => setTab(t)}
+              className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-all ${
+                tab === t ? 'bg-[#f1f1f1] text-[#0f0f0f]' : 'text-[#717171] hover:text-[#aaaaaa]'
+              }`}
+              style={{ transitionDuration: '150ms' }}
+            >
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+            </button>
+          ))}
+        </div>
+
+        {/* Chart tab */}
+        {tab === 'chart' && (
+          chartData.length === 0 ? (
+            <div className="flex items-center justify-center h-[240px] text-[#717171] text-sm">No data</div>
+          ) : (
+            <div style={{ height: 240 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="analyticsGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f1f1f1" stopOpacity={0.15} />
+                      <stop offset="95%" stopColor="#f1f1f1" stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#3f3f3f" vertical={false} />
+                  <XAxis dataKey="key" tickFormatter={formatLabel} tick={{ fill: '#717171', fontSize: 11 }} axisLine={{ stroke: '#3f3f3f' }} tickLine={false} interval="preserveStartEnd" />
+                  <YAxis tickFormatter={(v: number) => `£${v}`} tick={{ fill: '#717171', fontSize: 11 }} axisLine={false} tickLine={false} width={52} />
+                  <Tooltip
+                    contentStyle={{ background: '#1a1a1a', border: '1px solid #3f3f3f', borderRadius: '8px', color: '#f1f1f1', fontSize: 13 }}
+                    formatter={(value) => [`£${(value as number).toFixed(2)}`, 'Spent']}
+                    labelFormatter={(label) => formatLabel(label as string)}
+                    cursor={{ stroke: '#717171', strokeWidth: 1, strokeDasharray: '3 3' }}
+                  />
+                  <Area type="monotone" dataKey="total" stroke="#f1f1f1" strokeWidth={2} fill="url(#analyticsGrad)"
+                    dot={{ fill: '#0f0f0f', stroke: '#f1f1f1', strokeWidth: 2, r: 4 }}
+                    activeDot={{ fill: '#f1f1f1', stroke: '#0f0f0f', strokeWidth: 2, r: 5 }}
+                    isAnimationActive={true} animationDuration={500} animationEasing="ease-out"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          )
+        )}
+
+        {/* Insights tab */}
+        {tab === 'insights' && (
+          <div className="space-y-2 max-h-[240px] overflow-y-auto pr-1">
+            {vendorData.length === 0 ? (
+              <div className="flex items-center justify-center h-[240px] text-[#717171] text-sm">No data</div>
+            ) : vendorData.map((v, i) => (
+              <div key={v.name} className="flex items-center gap-3 group">
+                <span className="text-[#717171] text-xs w-4 shrink-0">{i + 1}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[#f1f1f1] text-sm font-medium truncate">{v.name}</span>
+                    <span className="text-[#f1f1f1] text-sm font-mono tabular-nums ml-3 shrink-0">£{v.total.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-1 bg-[#2a2a2a] rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-[#f1f1f1]/60 rounded-full"
+                        style={{ width: `${(v.total / maxVendorTotal) * 100}%` }}
+                      />
+                    </div>
+                    <span className="text-[#717171] text-xs shrink-0">
+                      {v.visits} {v.visits === 1 ? 'visit' : 'visits'} · £{v.avg.toFixed(2)} avg
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         )}
 
@@ -805,44 +846,20 @@ export default function Dashboard() {
           {/* Work Lunches Section */}
           <AccordionItem
             value="work-lunches"
-            className={`rounded-lg bg-[#212121] overflow-hidden transition-all border ${workCompletedMonths.size > 0 ? 'border-[#4ade80]/30 hover:border-[#4ade80]/60' : 'border-[#3f3f3f] hover:border-[#717171]'}`}
+            className="rounded-lg bg-[#212121] overflow-hidden transition-all border border-[#3f3f3f] hover:border-[#717171]"
             style={{ transitionDuration: 'var(--duration-base)' }}
           >
             <AccordionTrigger
               className="hover:no-underline hover:bg-[#272727]/50 transition-colors p-4 sm:p-6 min-h-[44px]"
               style={{ transitionDuration: 'var(--duration-base)' }}
             >
-              <div className="flex items-center justify-between w-full pr-2">
-                <div className="text-left">
-                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
-                    Work Lunches
-                  </h2>
-                  <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
-                    {workLunches.length} items · Kings Cross · £{workLunchesTotal.toFixed(2)}
-                  </p>
-                </div>
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onPointerDown={e => e.stopPropagation()}
-                  onClick={e => { e.stopPropagation(); setMarkModal({ open: true, section: 'work' }); }}
-                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); setMarkModal({ open: true, section: 'work' }); } }}
-                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#717171] ${
-                    workCompletedMonths.size > 0
-                      ? 'border-[#4ade80]/40 bg-[#4ade80]/10 text-[#4ade80]'
-                      : 'border-[#3f3f3f] text-[#aaaaaa] hover:border-[#717171] hover:text-[#f1f1f1]'
-                  }`}
-                  style={{ transitionDuration: '150ms' }}
-                >
-                  {workCompletedMonths.size > 0 ? (
-                    <>
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Completed
-                    </>
-                  ) : 'Mark Complete'}
-                </span>
+              <div className="text-left">
+                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
+                  Work Lunches
+                </h2>
+                <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
+                  {workLunches.length} items · Kings Cross · £{workLunchesTotal.toFixed(2)}
+                </p>
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-4 sm:px-6 pb-4 sm:pb-6">
@@ -852,7 +869,6 @@ export default function Dashboard() {
                   <ExpenseCard
                     key={`${expense.date}-${expense.merchant}-${expense.amount}`}
                     expense={expense}
-                    completed={completedMonths.has(getYearMonth(expense.date))}
                   />
                 ))}
               </div>
@@ -872,7 +888,7 @@ export default function Dashboard() {
                     {displayedWorkLunches.map((expense, idx) => (
                       <TableRow
                         key={`${expense.date}-${expense.merchant}-${expense.amount}`}
-                        className={`border-[#3f3f3f] hover:bg-[#272727] transition-colors ${completedMonths.has(getYearMonth(expense.date)) ? 'opacity-40' : ''}`}
+                        className="border-[#3f3f3f] hover:bg-[#272727] transition-colors"
                         style={{
                           transitionDuration: 'var(--duration-fast)',
                           animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
