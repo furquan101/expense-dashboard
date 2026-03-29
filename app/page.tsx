@@ -607,23 +607,11 @@ export default function Dashboard() {
 
   // Show limited items
   const INITIAL_SHOW = 5;
-  // Unique months in each section (sorted ascending) — memoized to avoid new Set identity on every render
-  const workLunchMonths = useMemo(
-    () => [...new Set(workLunches.map(e => getYearMonth(e.date)))].sort(),
-    [workLunches]
-  );
-  const qatarMonths = useMemo(
-    () => [...new Set(qatarTrip.map(e => getYearMonth(e.date)))].sort(),
-    [qatarTrip]
-  );
-  const workCompletedMonths = useMemo(
-    () => new Set([...completedMonths].filter(m => workLunchMonths.includes(m))),
-    [completedMonths, workLunchMonths]
-  );
-  const qatarCompletedMonths = useMemo(
-    () => new Set([...completedMonths].filter(m => qatarMonths.includes(m))),
-    [completedMonths, qatarMonths]
-  );
+  // Unique months in each section (sorted ascending)
+  const workLunchMonths = [...new Set(workLunches.map(e => getYearMonth(e.date)))].sort();
+  const qatarMonths = [...new Set(qatarTrip.map(e => getYearMonth(e.date)))].sort();
+  const workCompletedMonths = new Set([...completedMonths].filter(m => workLunchMonths.includes(m)));
+  const qatarCompletedMonths = new Set([...completedMonths].filter(m => qatarMonths.includes(m)));
 
   const displayedWorkLunches = showAllWorkLunches ? workLunches : workLunches.slice(0, INITIAL_SHOW);
   const displayedQatar = showAllQatar ? qatarTrip : qatarTrip.slice(0, INITIAL_SHOW);
