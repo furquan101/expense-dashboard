@@ -12,6 +12,7 @@ const TRANSACTIONS_PER_PAGE = 100;
 const EXCLUDED_MERCHANTS = [
   'Furquan', // Personal contact - P2P payments
   'Share The Meal', // Charity donation app - not a work expense
+  'Bloom & Wild', // Flower shop - not a work expense
 ];
 
 /**

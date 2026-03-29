@@ -607,9 +607,9 @@ export default function Dashboard() {
 
   // Show limited items
   const INITIAL_SHOW = 5;
-  // Unique months in each section (sorted ascending)
-  const workLunchMonths = [...new Set(workLunches.map(e => getYearMonth(e.date)))].sort();
-  const qatarMonths = [...new Set(qatarTrip.map(e => getYearMonth(e.date)))].sort();
+  // Unique months in each section (most recent first)
+  const workLunchMonths = [...new Set(workLunches.map(e => getYearMonth(e.date)))].sort().reverse();
+  const qatarMonths = [...new Set(qatarTrip.map(e => getYearMonth(e.date)))].sort().reverse();
   const workCompletedMonths = new Set([...completedMonths].filter(m => workLunchMonths.includes(m)));
   const qatarCompletedMonths = new Set([...completedMonths].filter(m => qatarMonths.includes(m)));
 
@@ -805,7 +805,7 @@ export default function Dashboard() {
           {/* Work Lunches Section */}
           <AccordionItem
             value="work-lunches"
-            className="border border-[#3f3f3f] rounded-lg bg-[#212121] overflow-hidden transition-all hover:border-[#717171]"
+            className={`rounded-lg bg-[#212121] overflow-hidden transition-all border ${workCompletedMonths.size > 0 ? 'border-[#4ade80]/30 hover:border-[#4ade80]/60' : 'border-[#3f3f3f] hover:border-[#717171]'}`}
             style={{ transitionDuration: 'var(--duration-base)' }}
           >
             <AccordionTrigger
@@ -914,7 +914,7 @@ export default function Dashboard() {
           {/* Qatar Trip Section */}
           <AccordionItem
             value="qatar-trip"
-            className="border border-[#3f3f3f] rounded-lg bg-[#212121] overflow-hidden transition-all hover:border-[#717171]"
+            className={`rounded-lg bg-[#212121] overflow-hidden transition-all border ${qatarCompletedMonths.size > 0 ? 'border-[#4ade80]/30 hover:border-[#4ade80]/60' : 'border-[#3f3f3f] hover:border-[#717171]'}`}
             style={{ transitionDuration: 'var(--duration-base)' }}
           >
             <AccordionTrigger
