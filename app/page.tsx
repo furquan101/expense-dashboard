@@ -846,7 +846,7 @@ export default function Dashboard() {
           {/* Work Lunches Section */}
           <AccordionItem
             value="work-lunches"
-            className={`rounded-lg bg-[#212121] overflow-hidden transition-all border ${workCompletedMonths.size > 0 ? 'border-[#4ade80]/30 hover:border-[#4ade80]/60' : 'border-[#3f3f3f] hover:border-[#717171]'}`}
+            className="rounded-lg bg-[#212121] overflow-hidden transition-all border border-[#3f3f3f] hover:border-[#717171]"
             style={{ transitionDuration: 'var(--duration-base)' }}
           >
             <AccordionTrigger
@@ -868,21 +868,10 @@ export default function Dashboard() {
                   onPointerDown={e => e.stopPropagation()}
                   onClick={e => { e.stopPropagation(); setMarkModal({ open: true, section: 'work' }); }}
                   onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); setMarkModal({ open: true, section: 'work' }); } }}
-                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#717171] ${
-                    workCompletedMonths.size > 0
-                      ? 'border-[#4ade80]/40 bg-[#4ade80]/10 text-[#4ade80]'
-                      : 'border-[#3f3f3f] text-[#aaaaaa] hover:border-[#717171] hover:text-[#f1f1f1]'
-                  }`}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-[#3f3f3f] text-[#aaaaaa] hover:border-[#717171] hover:text-[#f1f1f1] transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#717171]"
                   style={{ transitionDuration: '150ms' }}
                 >
-                  {workCompletedMonths.size > 0 ? (
-                    <>
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Completed
-                    </>
-                  ) : 'Mark Complete'}
+                  Mark Complete
                 </span>
               </div>
             </AccordionTrigger>
@@ -955,7 +944,7 @@ export default function Dashboard() {
           {/* Qatar Trip Section */}
           <AccordionItem
             value="qatar-trip"
-            className={`rounded-lg bg-[#212121] overflow-hidden transition-all border ${qatarCompletedMonths.size > 0 ? 'border-[#4ade80]/30 hover:border-[#4ade80]/60' : 'border-[#3f3f3f] hover:border-[#717171]'}`}
+            className="rounded-lg bg-[#212121] overflow-hidden transition-all border border-[#3f3f3f] hover:border-[#717171]"
             style={{ transitionDuration: 'var(--duration-base)' }}
           >
             <AccordionTrigger
@@ -977,21 +966,10 @@ export default function Dashboard() {
                   onPointerDown={e => e.stopPropagation()}
                   onClick={e => { e.stopPropagation(); setMarkModal({ open: true, section: 'qatar' }); }}
                   onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); setMarkModal({ open: true, section: 'qatar' }); } }}
-                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#717171] ${
-                    qatarCompletedMonths.size > 0
-                      ? 'border-[#4ade80]/40 bg-[#4ade80]/10 text-[#4ade80]'
-                      : 'border-[#3f3f3f] text-[#aaaaaa] hover:border-[#717171] hover:text-[#f1f1f1]'
-                  }`}
+                  className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border border-[#3f3f3f] text-[#aaaaaa] hover:border-[#717171] hover:text-[#f1f1f1] transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#717171]"
                   style={{ transitionDuration: '150ms' }}
                 >
-                  {qatarCompletedMonths.size > 0 ? (
-                    <>
-                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-                      </svg>
-                      Completed
-                    </>
-                  ) : 'Mark Complete'}
+                  Mark Complete
                 </span>
               </div>
             </AccordionTrigger>
