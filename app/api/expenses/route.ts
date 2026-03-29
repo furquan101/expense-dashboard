@@ -231,6 +231,7 @@ export async function GET(request: Request) {
             cached: false,
             monzoConnected: false,
             scaRequired,
+            blobConfigured: isBlobConfigured(),
           }, {
             headers: {
               'Cache-Control': 'public, max-age=300, stale-while-revalidate=600',
@@ -249,7 +250,7 @@ export async function GET(request: Request) {
 
     const total = workLunchesTotal + qatarTripTotal + newMonzoTotal;
 
-    const responseData: ExpenseSummary & { monzoConnected?: boolean } = {
+    const responseData: ExpenseSummary & { monzoConnected?: boolean; blobConfigured?: boolean } = {
       expenses,
       total: parseFloat(total.toFixed(2)),
       count: expenses.length,
@@ -268,6 +269,7 @@ export async function GET(request: Request) {
       lastUpdated: new Date().toISOString(),
       cached: false,
       monzoConnected,
+      blobConfigured: isBlobConfigured(),
     };
 
     // Update cache

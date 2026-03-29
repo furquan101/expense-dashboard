@@ -15,6 +15,115 @@ import {
   AlertDialogCancel,
 } from '@/components/ui/alert-dialog';
 import type { Expense, ExpenseSummary } from '@/lib/types';
+import { BarChart2 } from 'lucide-react';
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
+
+function getYearMonth(dateStr: string): string {
+  return dateStr.substring(0, 7);
+}
+
+function formatYearMonth(ym: string): string {
+  const [year, month] = ym.split('-');
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  return `${months[parseInt(month) - 1]} ${year}`;
+}
+
+function MarkCompleteModal({
+  open,
+  availableMonths,
+  completedMonths,
+  onConfirm,
+  onClose,
+}: {
+  open: boolean;
+  availableMonths: string[];
+  completedMonths: Set<string>;
+  onConfirm: (months: Set<string>) => void;
+  onClose: () => void;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set(completedMonths));
+
+  useEffect(() => {
+    if (open) setSelected(new Set(completedMonths));
+  }, [open, completedMonths]);
+
+  if (!open) return null;
+
+  const toggle = (ym: string) => {
+    setSelected(prev => {
+      const next = new Set(prev);
+      if (next.has(ym)) next.delete(ym);
+      else next.add(ym);
+      return next;
+    });
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div
+        className="relative bg-[#1a1a1a] border border-[#3f3f3f] rounded-xl p-6 w-full max-w-sm shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <h3 className="text-[#f1f1f1] font-bold text-lg mb-1">Mark as Completed</h3>
+        <p className="text-[#717171] text-sm mb-5">Select months you&apos;ve submitted expenses for.</p>
+
+        <div className="space-y-2 mb-6">
+          {availableMonths.map(ym => {
+            const done = selected.has(ym);
+            return (
+              <button
+                key={ym}
+                onClick={() => toggle(ym)}
+                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
+                  done
+                    ? 'border-[#4ade80]/40 bg-[#4ade80]/10 text-[#4ade80]'
+                    : 'border-[#3f3f3f] bg-[#212121] text-[#aaaaaa] hover:border-[#717171] hover:text-[#f1f1f1]'
+                }`}
+                style={{ transitionDuration: '150ms' }}
+              >
+                <span>{formatYearMonth(ym)}</span>
+                {done && (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2.5 rounded-lg border border-[#3f3f3f] text-[#aaaaaa] text-sm hover:border-[#717171] hover:text-[#f1f1f1] transition-all"
+            style={{ transitionDuration: '150ms' }}
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(selected)}
+            className="flex-1 px-4 py-2.5 rounded-lg bg-[#f1f1f1] text-[#0f0f0f] text-sm font-medium hover:bg-[#d4d4d4] transition-all"
+            style={{ transitionDuration: '150ms' }}
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 type ExpenseData = ExpenseSummary & { monzoConnected?: boolean; scaRequired?: boolean };
 
@@ -84,9 +193,9 @@ function AnimatedNumber({ value, decimals = 2 }: { value: number; decimals?: num
 }
 
 // Mobile card view for expenses - amount on left
-function ExpenseCard({ expense }: { expense: Expense }) {
+function ExpenseCard({ expense, completed }: { expense: Expense; completed?: boolean }) {
   return (
-    <div className="border border-[#3f3f3f] bg-[#212121] rounded-lg p-4 hover:bg-[#272727] transition-colors duration-150">
+    <div className={`border border-[#3f3f3f] bg-[#212121] rounded-lg p-4 hover:bg-[#272727] transition-colors duration-150 ${completed ? 'opacity-40' : ''}`}>
       <div className="flex justify-between items-start mb-3">
         <div className="text-left">
           <div className="font-mono text-[#f1f1f1] font-medium text-xl tabular-nums">
@@ -189,6 +298,151 @@ function EmptyState({ showConnect }: { showConnect?: boolean }) {
   );
 }
 
+// Analytics line chart modal
+function AnalyticsModal({
+  open,
+  expenses,
+  onClose,
+}: {
+  open: boolean;
+  expenses: Expense[];
+  onClose: () => void;
+}) {
+  const [groupBy, setGroupBy] = useState<'week' | 'month'>('month');
+
+  const chartData = useMemo(() => {
+    if (!expenses.length) return [];
+    const buckets: Record<string, number> = {};
+
+    for (const e of expenses) {
+      let key: string;
+      if (groupBy === 'month') {
+        key = e.date.substring(0, 7);
+      } else {
+        // ISO week: find Monday of that week
+        const d = new Date(e.date);
+        const day = d.getDay() || 7;
+        d.setDate(d.getDate() - day + 1);
+        key = d.toISOString().split('T')[0];
+      }
+      buckets[key] = (buckets[key] || 0) + e.amount;
+    }
+
+    return Object.entries(buckets)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([key, total]) => ({ key, total: parseFloat(total.toFixed(2)) }));
+  }, [expenses, groupBy]);
+
+  if (!open) return null;
+
+  const formatLabel = (key: string) => {
+    if (groupBy === 'month') {
+      const [y, m] = key.split('-');
+      return ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m) - 1] + ' ' + y.slice(2);
+    }
+    const d = new Date(key);
+    return `${d.getDate()}/${d.getMonth() + 1}`;
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+      <div
+        className="relative bg-[#1a1a1a] border border-[#3f3f3f] rounded-xl p-6 w-full max-w-2xl shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-5">
+          <div>
+            <h3 className="text-[#f1f1f1] font-bold text-lg">Spending Analytics</h3>
+            <p className="text-[#717171] text-sm mt-0.5">Expenses over time</p>
+          </div>
+          <div className="flex items-center gap-1 bg-[#212121] border border-[#3f3f3f] rounded-lg p-1">
+            {(['week', 'month'] as const).map(g => (
+              <button
+                key={g}
+                onClick={() => setGroupBy(g)}
+                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+                  groupBy === g
+                    ? 'bg-[#f1f1f1] text-[#0f0f0f]'
+                    : 'text-[#717171] hover:text-[#aaaaaa]'
+                }`}
+                style={{ transitionDuration: '150ms' }}
+              >
+                {g.charAt(0).toUpperCase() + g.slice(1)}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {chartData.length === 0 ? (
+          <div className="flex items-center justify-center h-[240px] text-[#717171] text-sm">No data</div>
+        ) : (
+          <div style={{ height: 240 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 8, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="analyticsGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#f1f1f1" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="#f1f1f1" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#3f3f3f" vertical={false} />
+                <XAxis
+                  dataKey="key"
+                  tickFormatter={formatLabel}
+                  tick={{ fill: '#717171', fontSize: 11 }}
+                  axisLine={{ stroke: '#3f3f3f' }}
+                  tickLine={false}
+                  interval="preserveStartEnd"
+                />
+                <YAxis
+                  tickFormatter={(v: number) => `£${v}`}
+                  tick={{ fill: '#717171', fontSize: 11 }}
+                  axisLine={false}
+                  tickLine={false}
+                  width={52}
+                />
+                <Tooltip
+                  contentStyle={{
+                    background: '#1a1a1a',
+                    border: '1px solid #3f3f3f',
+                    borderRadius: '8px',
+                    color: '#f1f1f1',
+                    fontSize: 13,
+                  }}
+                  formatter={(value) => [`£${(value as number).toFixed(2)}`, 'Spent']}
+                  labelFormatter={(label) => formatLabel(label as string)}
+                  cursor={{ stroke: '#717171', strokeWidth: 1, strokeDasharray: '3 3' }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="total"
+                  stroke="#f1f1f1"
+                  strokeWidth={2}
+                  fill="url(#analyticsGrad)"
+                  dot={{ fill: '#0f0f0f', stroke: '#f1f1f1', strokeWidth: 2, r: 4 }}
+                  activeDot={{ fill: '#f1f1f1', stroke: '#0f0f0f', strokeWidth: 2, r: 5 }}
+                  isAnimationActive={true}
+                  animationDuration={500}
+                  animationEasing="ease-out"
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+
+        <button
+          onClick={onClose}
+          className="mt-4 w-full px-4 py-2.5 rounded-lg border border-[#3f3f3f] text-[#aaaaaa] text-sm hover:border-[#717171] hover:text-[#f1f1f1] transition-all"
+          style={{ transitionDuration: '150ms' }}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const [data, setData] = useState<ExpenseData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -201,6 +455,25 @@ export default function Dashboard() {
   // Show more state
   const [showAllWorkLunches, setShowAllWorkLunches] = useState(false);
   const [showAllQatar, setShowAllQatar] = useState(false);
+
+  // Completed months — persisted in localStorage
+  const [completedMonths, setCompletedMonths] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    try {
+      const s = localStorage.getItem('completedMonths');
+      if (s) setCompletedMonths(new Set(JSON.parse(s)));
+    } catch { /* ignore */ }
+  }, []);
+
+  const [markModal, setMarkModal] = useState<{ open: boolean; section: 'work' | 'qatar' } | null>(null);
+  const [analyticsOpen, setAnalyticsOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('completedMonths', JSON.stringify([...completedMonths]));
+    } catch { /* ignore */ }
+  }, [completedMonths]);
 
   const handleDisconnect = async () => {
     setDisconnecting(true);
@@ -315,24 +588,28 @@ export default function Dashboard() {
 
   // Separate expenses by category
   // All work lunches except Qatar trip dates
-  const workLunches = data?.expenses.filter(e => {
-    // All work lunches except Qatar trip dates
-    return !(e.date >= '2026-02-01' && e.date <= '2026-02-07');
-  }) || [];
+  const workLunches = useMemo(
+    () => (data?.expenses || []).filter(e => !(e.date >= '2026-02-01' && e.date <= '2026-02-07')),
+    [data?.expenses]
+  );
+
+  const thirtyDaysAgoStr = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 30);
+    return d.toISOString().split('T')[0];
+  }, []);
 
   // Recent transactions (last 30 days)
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-  const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
-
-  const recentTransactions = data?.expenses.filter(e => {
-    return e.date >= thirtyDaysAgoStr;
-  }) || [];
+  const recentTransactions = useMemo(
+    () => (data?.expenses || []).filter(e => e.date >= thirtyDaysAgoStr),
+    [data?.expenses, thirtyDaysAgoStr]
+  );
 
   // Qatar Trip expenses (Feb 1-7, 2026)
-  const qatarTrip = data?.expenses.filter(e => {
-    return e.date >= '2026-02-01' && e.date <= '2026-02-07';
-  }) || [];
+  const qatarTrip = useMemo(
+    () => (data?.expenses || []).filter(e => e.date >= '2026-02-01' && e.date <= '2026-02-07'),
+    [data?.expenses]
+  );
 
   // Calculate totals for each section
   const workLunchesTotal = workLunches.reduce((sum, e) => sum + e.amount, 0);
@@ -341,6 +618,24 @@ export default function Dashboard() {
 
   // Show limited items
   const INITIAL_SHOW = 5;
+  // Unique months in each section (sorted ascending) — memoized to avoid new Set identity on every render
+  const workLunchMonths = useMemo(
+    () => [...new Set(workLunches.map(e => getYearMonth(e.date)))].sort(),
+    [workLunches]
+  );
+  const qatarMonths = useMemo(
+    () => [...new Set(qatarTrip.map(e => getYearMonth(e.date)))].sort(),
+    [qatarTrip]
+  );
+  const workCompletedMonths = useMemo(
+    () => new Set([...completedMonths].filter(m => workLunchMonths.includes(m))),
+    [completedMonths, workLunchMonths]
+  );
+  const qatarCompletedMonths = useMemo(
+    () => new Set([...completedMonths].filter(m => qatarMonths.includes(m))),
+    [completedMonths, qatarMonths]
+  );
+
   const displayedWorkLunches = showAllWorkLunches ? workLunches : workLunches.slice(0, INITIAL_SHOW);
   const displayedQatar = showAllQatar ? qatarTrip : qatarTrip.slice(0, INITIAL_SHOW);
 
@@ -350,12 +645,24 @@ export default function Dashboard() {
         {/* Header */}
         <div className="border-b border-[#3f3f3f] pb-4 sm:pb-6">
           <div className="space-y-2">
-            <h1 className="text-3xl sm:text-4xl font-bold text-[#f1f1f1] tracking-tight">
-              Expense Reports
-            </h1>
-            <p className="text-[#aaaaaa] text-sm sm:text-base">
-              Real-time lunch tracking & business trips
-            </p>
+            <div className="flex items-start justify-between">
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-[#f1f1f1] tracking-tight">
+                  Expense Reports
+                </h1>
+                <p className="text-[#aaaaaa] text-sm sm:text-base">
+                  Real-time lunch tracking & business trips
+                </p>
+              </div>
+              <button
+                onClick={() => setAnalyticsOpen(true)}
+                className="p-2 rounded-lg border border-[#3f3f3f] text-[#717171] hover:border-[#717171] hover:text-[#f1f1f1] transition-all mt-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#717171]"
+                style={{ transitionDuration: '150ms' }}
+                aria-label="Open analytics"
+              >
+                <BarChart2 className="w-5 h-5" />
+              </button>
+            </div>
             <button
               onClick={() => fetchData(false)}
               disabled={refreshing}
@@ -528,20 +835,48 @@ export default function Dashboard() {
               className="hover:no-underline hover:bg-[#272727]/50 transition-colors p-4 sm:p-6 min-h-[44px]"
               style={{ transitionDuration: 'var(--duration-base)' }}
             >
-              <div className="text-left w-full">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
-                  Work Lunches
-                </h2>
-                <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
-                  {workLunches.length} items · Kings Cross · £{workLunchesTotal.toFixed(2)}
-                </p>
+              <div className="flex items-center justify-between w-full pr-2">
+                <div className="text-left">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
+                    Work Lunches
+                  </h2>
+                  <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
+                    {workLunches.length} items · Kings Cross · £{workLunchesTotal.toFixed(2)}
+                  </p>
+                </div>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onPointerDown={e => e.stopPropagation()}
+                  onClick={e => { e.stopPropagation(); setMarkModal({ open: true, section: 'work' }); }}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); setMarkModal({ open: true, section: 'work' }); } }}
+                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#717171] ${
+                    workCompletedMonths.size > 0
+                      ? 'border-[#4ade80]/40 bg-[#4ade80]/10 text-[#4ade80]'
+                      : 'border-[#3f3f3f] text-[#717171] hover:border-[#717171] hover:text-[#aaaaaa]'
+                  }`}
+                  style={{ transitionDuration: '150ms' }}
+                >
+                  {workCompletedMonths.size > 0 ? (
+                    <>
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Completed
+                    </>
+                  ) : 'Mark Complete'}
+                </span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-4 sm:px-6 pb-4 sm:pb-6">
               {/* Mobile: Card View */}
               <div className="md:hidden space-y-3">
                 {displayedWorkLunches.map((expense, idx) => (
-                  <ExpenseCard key={idx} expense={expense} />
+                  <ExpenseCard
+                    key={`${expense.date}-${expense.merchant}-${expense.amount}`}
+                    expense={expense}
+                    completed={completedMonths.has(getYearMonth(expense.date))}
+                  />
                 ))}
               </div>
 
@@ -559,8 +894,8 @@ export default function Dashboard() {
                   <TableBody>
                     {displayedWorkLunches.map((expense, idx) => (
                       <TableRow
-                        key={idx}
-                        className="border-[#3f3f3f] hover:bg-[#272727] transition-colors"
+                        key={`${expense.date}-${expense.merchant}-${expense.amount}`}
+                        className={`border-[#3f3f3f] hover:bg-[#272727] transition-colors ${completedMonths.has(getYearMonth(expense.date)) ? 'opacity-40' : ''}`}
                         style={{
                           transitionDuration: 'var(--duration-fast)',
                           animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
@@ -609,20 +944,48 @@ export default function Dashboard() {
               className="hover:no-underline hover:bg-[#272727]/50 transition-colors p-4 sm:p-6 min-h-[44px]"
               style={{ transitionDuration: 'var(--duration-base)' }}
             >
-              <div className="text-left w-full">
-                <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
-                  Qatar Business Trip
-                </h2>
-                <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
-                  {qatarTrip.length} items · Feb 1-7, 2026 · £{qatarTripTotal.toFixed(2)}
-                </p>
+              <div className="flex items-center justify-between w-full pr-2">
+                <div className="text-left">
+                  <h2 className="text-lg sm:text-xl md:text-2xl font-bold text-[#f1f1f1]">
+                    Qatar Business Trip
+                  </h2>
+                  <p className="text-[#aaaaaa] text-xs sm:text-sm mt-1">
+                    {qatarTrip.length} items · Feb 1-7, 2026 · £{qatarTripTotal.toFixed(2)}
+                  </p>
+                </div>
+                <span
+                  role="button"
+                  tabIndex={0}
+                  onPointerDown={e => e.stopPropagation()}
+                  onClick={e => { e.stopPropagation(); setMarkModal({ open: true, section: 'qatar' }); }}
+                  onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.stopPropagation(); setMarkModal({ open: true, section: 'qatar' }); } }}
+                  className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#717171] ${
+                    qatarCompletedMonths.size > 0
+                      ? 'border-[#4ade80]/40 bg-[#4ade80]/10 text-[#4ade80]'
+                      : 'border-[#3f3f3f] text-[#717171] hover:border-[#717171] hover:text-[#aaaaaa]'
+                  }`}
+                  style={{ transitionDuration: '150ms' }}
+                >
+                  {qatarCompletedMonths.size > 0 ? (
+                    <>
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                      </svg>
+                      Completed
+                    </>
+                  ) : 'Mark Complete'}
+                </span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="px-4 sm:px-6 pb-4 sm:pb-6">
               {/* Mobile: Card View */}
               <div className="md:hidden space-y-3">
                 {displayedQatar.map((expense, idx) => (
-                  <ExpenseCard key={idx} expense={expense} />
+                  <ExpenseCard
+                    key={`${expense.date}-${expense.merchant}-${expense.amount}`}
+                    expense={expense}
+                    completed={completedMonths.has(getYearMonth(expense.date))}
+                  />
                 ))}
               </div>
 
@@ -641,8 +1004,8 @@ export default function Dashboard() {
                   <TableBody>
                     {displayedQatar.map((expense, idx) => (
                       <TableRow
-                        key={idx}
-                        className="border-[#3f3f3f] hover:bg-[#272727] transition-colors"
+                        key={`${expense.date}-${expense.merchant}-${expense.amount}`}
+                        className={`border-[#3f3f3f] hover:bg-[#272727] transition-colors ${completedMonths.has(getYearMonth(expense.date)) ? 'opacity-40' : ''}`}
                         style={{
                           transitionDuration: 'var(--duration-fast)',
                           animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
@@ -723,6 +1086,35 @@ export default function Dashboard() {
             </a>
           )}
         </div>
+
+        {/* Mark Complete Modal */}
+        <MarkCompleteModal
+          open={markModal?.open === true}
+          availableMonths={markModal?.section === 'work' ? workLunchMonths : qatarMonths}
+          completedMonths={
+            new Set([...completedMonths].filter(m =>
+              (markModal?.section === 'work' ? workLunchMonths : qatarMonths).includes(m)
+            ))
+          }
+          onConfirm={(selected) => {
+            setCompletedMonths(prev => {
+              const next = new Set(prev);
+              const sectionMonths = markModal?.section === 'work' ? workLunchMonths : qatarMonths;
+              sectionMonths.forEach(m => next.delete(m));
+              selected.forEach(m => next.add(m));
+              return next;
+            });
+            setMarkModal(null);
+          }}
+          onClose={() => setMarkModal(null)}
+        />
+
+        {/* Analytics Modal */}
+        <AnalyticsModal
+          open={analyticsOpen}
+          expenses={data?.expenses || []}
+          onClose={() => setAnalyticsOpen(false)}
+        />
       </div>
 
       <style jsx>{`

@@ -11,6 +11,7 @@ const TRANSACTIONS_PER_PAGE = 100;
 // Add merchant names here that should never appear as lunch expenses
 const EXCLUDED_MERCHANTS = [
   'Furquan', // Personal contact - P2P payments
+  'Share The Meal', // Charity donation app - not a work expense
 ];
 
 /**
