@@ -588,28 +588,17 @@ export default function Dashboard() {
 
   // Separate expenses by category
   // All work lunches except Qatar trip dates
-  const workLunches = useMemo(
-    () => (data?.expenses || []).filter(e => !(e.date >= '2026-02-01' && e.date <= '2026-02-07')),
-    [data?.expenses]
-  );
+  const workLunches = data.expenses.filter(e => !(e.date >= '2026-02-01' && e.date <= '2026-02-07'));
 
-  const thirtyDaysAgoStr = useMemo(() => {
-    const d = new Date();
-    d.setDate(d.getDate() - 30);
-    return d.toISOString().split('T')[0];
-  }, []);
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const thirtyDaysAgoStr = thirtyDaysAgo.toISOString().split('T')[0];
 
   // Recent transactions (last 30 days)
-  const recentTransactions = useMemo(
-    () => (data?.expenses || []).filter(e => e.date >= thirtyDaysAgoStr),
-    [data?.expenses, thirtyDaysAgoStr]
-  );
+  const recentTransactions = data.expenses.filter(e => e.date >= thirtyDaysAgoStr);
 
   // Qatar Trip expenses (Feb 1-7, 2026)
-  const qatarTrip = useMemo(
-    () => (data?.expenses || []).filter(e => e.date >= '2026-02-01' && e.date <= '2026-02-07'),
-    [data?.expenses]
-  );
+  const qatarTrip = data.expenses.filter(e => e.date >= '2026-02-01' && e.date <= '2026-02-07');
 
   // Calculate totals for each section
   const workLunchesTotal = workLunches.reduce((sum, e) => sum + e.amount, 0);
