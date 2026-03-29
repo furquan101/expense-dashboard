@@ -830,7 +830,7 @@ export default function Dashboard() {
                   className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#717171] ${
                     workCompletedMonths.size > 0
                       ? 'border-[#4ade80]/40 bg-[#4ade80]/10 text-[#4ade80]'
-                      : 'border-[#3f3f3f] text-[#717171] hover:border-[#717171] hover:text-[#aaaaaa]'
+                      : 'border-[#3f3f3f] text-[#aaaaaa] hover:border-[#717171] hover:text-[#f1f1f1]'
                   }`}
                   style={{ transitionDuration: '150ms' }}
                 >
@@ -939,7 +939,7 @@ export default function Dashboard() {
                   className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg border transition-all shrink-0 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#717171] ${
                     qatarCompletedMonths.size > 0
                       ? 'border-[#4ade80]/40 bg-[#4ade80]/10 text-[#4ade80]'
-                      : 'border-[#3f3f3f] text-[#717171] hover:border-[#717171] hover:text-[#aaaaaa]'
+                      : 'border-[#3f3f3f] text-[#aaaaaa] hover:border-[#717171] hover:text-[#f1f1f1]'
                   }`}
                   style={{ transitionDuration: '150ms' }}
                 >
