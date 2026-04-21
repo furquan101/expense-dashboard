@@ -182,17 +182,12 @@ export async function GET(request: Request) {
           return !csvKeys.has(key);
         });
 
-        // Only include Monzo transactions after the CSV's last date (Feb 7)
-        const recentMonzoExpenses = newMonzoExpenses.filter(e => {
-          return e.date > '2026-02-07';
-        });
+        console.log(`Monzo: ${newMonzoExpenses.length} expenses to display`);
 
-        console.log(`Monzo: ${recentMonzoExpenses.length} expenses to display`);
+        newMonzoCount = newMonzoExpenses.length;
+        newMonzoTotal = newMonzoExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-        newMonzoCount = recentMonzoExpenses.length;
-        newMonzoTotal = recentMonzoExpenses.reduce((sum, e) => sum + e.amount, 0);
-
-        expenses.push(...recentMonzoExpenses);
+        expenses.push(...newMonzoExpenses);
       } catch (error) {
         const message = error instanceof Error ? error.message : '';
         const isAuthError = message === 'MONZO_NOT_CONNECTED' || message === 'MONZO_TOKEN_INVALID' || message === 'MONZO_SCA_REQUIRED';
@@ -207,7 +202,7 @@ export async function GET(request: Request) {
                 const csvKeys = new Set(expenses.map(e => `${e.date}-${e.merchant}-${e.amount}`));
                 const storedNew = stored.filter(e => {
                   const key = `${e.date}-${e.merchant}-${e.amount}`;
-                  return !csvKeys.has(key) && e.date > '2026-02-07';
+                  return !csvKeys.has(key);
                 });
                 newMonzoCount = storedNew.length;
                 newMonzoTotal = storedNew.reduce((sum, e) => sum + e.amount, 0);

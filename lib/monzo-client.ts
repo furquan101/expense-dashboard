@@ -116,18 +116,6 @@ export function isLunchExpense(txn: MonzoTransaction): boolean {
     return false; // Explicitly excluded personal contact
   }
 
-  // Exclude transactions where merchant name looks like a person's name
-  // Two-word names with proper capitalization (e.g., "John Smith")
-  // This pattern catches common P2P payment formats
-  const twoWordNamePattern = /^[A-Z][a-z]+ [A-Z][a-z]+$/;
-  if (twoWordNamePattern.test(merchantName)) {
-    return false; // Likely a person-to-person payment
-  }
-
-  // Note: We don't filter single-word names as they could be legitimate shops
-  // (e.g., "Amee", "Pret", "Tesco"). Use the EXCLUDED_MERCHANTS list above
-  // for specific personal contacts you want to exclude.
-
   // Check day of week (Mon-Fri for office lunches)
   const date = new Date(txn.created);
   const day = date.getDay();

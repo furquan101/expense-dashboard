@@ -30,6 +30,10 @@ function getYearMonth(dateStr: string): string {
   return dateStr.substring(0, 7);
 }
 
+function getExpenseKey(expense: Expense): string {
+  return `${expense.date}-${expense.merchant}-${expense.amount}`;
+}
+
 function formatYearMonth(ym: string): string {
   const [year, month] = ym.split('-');
   const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -193,9 +197,16 @@ function AnimatedNumber({ value, decimals = 2 }: { value: number; decimals?: num
 }
 
 // Mobile card view for expenses - amount on left
-function ExpenseCard({ expense, completed }: { expense: Expense; completed?: boolean }) {
+function ExpenseCard({ expense, completed, onClick }: { expense: Expense; completed?: boolean; onClick?: () => void }) {
   return (
-    <div className={`border border-[#3f3f3f] bg-[#212121] rounded-lg p-4 hover:bg-[#272727] transition-colors duration-150 ${completed ? 'opacity-40' : ''}`}>
+    <div
+      onClick={onClick}
+      onKeyDown={(e) => { if ((e.key === 'Enter' || e.key === ' ') && onClick) { e.preventDefault(); onClick(); } }}
+      role="button"
+      tabIndex={0}
+      aria-pressed={completed}
+      className={`border border-[#3f3f3f] bg-[#212121] rounded-lg p-4 hover:bg-[#272727] transition-colors duration-150 cursor-pointer transition-opacity focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#717171] ${completed ? 'opacity-40' : ''}`}
+    >
       <div className="flex justify-between items-start mb-3">
         <div className="text-left">
           <div className="font-mono text-[#f1f1f1] font-medium text-xl tabular-nums">
@@ -499,11 +510,17 @@ export default function Dashboard() {
 
   // Completed months — persisted in localStorage
   const [completedMonths, setCompletedMonths] = useState<Set<string>>(new Set());
+  // Completed individual expenses — persisted in localStorage
+  const [completedExpenses, setCompletedExpenses] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     try {
       const s = localStorage.getItem('completedMonths');
       if (s) setCompletedMonths(new Set(JSON.parse(s)));
+    } catch { /* ignore */ }
+    try {
+      const s = localStorage.getItem('completedExpenses');
+      if (s) setCompletedExpenses(new Set(JSON.parse(s)));
     } catch { /* ignore */ }
   }, []);
 
@@ -515,6 +532,21 @@ export default function Dashboard() {
       localStorage.setItem('completedMonths', JSON.stringify([...completedMonths]));
     } catch { /* ignore */ }
   }, [completedMonths]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('completedExpenses', JSON.stringify([...completedExpenses]));
+    } catch { /* ignore */ }
+  }, [completedExpenses]);
+
+  const toggleExpense = (key: string) => {
+    setCompletedExpenses(prev => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   const handleDisconnect = async () => {
     setDisconnecting(true);
@@ -882,7 +914,8 @@ export default function Dashboard() {
                   <ExpenseCard
                     key={`${expense.date}-${expense.merchant}-${expense.amount}`}
                     expense={expense}
-                    completed={completedMonths.has(getYearMonth(expense.date))}
+                    completed={completedMonths.has(getYearMonth(expense.date)) || completedExpenses.has(getExpenseKey(expense))}
+                    onClick={() => toggleExpense(getExpenseKey(expense))}
                   />
                 ))}
               </div>
@@ -899,10 +932,23 @@ export default function Dashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {displayedWorkLunches.map((expense, idx) => (
+                    {displayedWorkLunches.map((expense, idx) => {
+                      const expenseKey = getExpenseKey(expense);
+                      const isFaded = completedMonths.has(getYearMonth(expense.date)) || completedExpenses.has(expenseKey);
+                      return (
                       <TableRow
-                        key={`${expense.date}-${expense.merchant}-${expense.amount}`}
-                        className={`border-[#3f3f3f] hover:bg-[#272727] transition-colors ${completedMonths.has(getYearMonth(expense.date)) ? 'opacity-40' : ''}`}
+                        key={expenseKey}
+                        onClick={() => toggleExpense(expenseKey)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            toggleExpense(expenseKey);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={isFaded}
+                        className={`border-[#3f3f3f] hover:bg-[#272727] transition-colors transition-opacity cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#717171] ${isFaded ? 'opacity-40' : ''}`}
                         style={{
                           transitionDuration: 'var(--duration-fast)',
                           animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
@@ -919,7 +965,8 @@ export default function Dashboard() {
                           {expense.location}
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
@@ -980,7 +1027,8 @@ export default function Dashboard() {
                   <ExpenseCard
                     key={`${expense.date}-${expense.merchant}-${expense.amount}`}
                     expense={expense}
-                    completed={completedMonths.has(getYearMonth(expense.date))}
+                    completed={completedMonths.has(getYearMonth(expense.date)) || completedExpenses.has(getExpenseKey(expense))}
+                    onClick={() => toggleExpense(getExpenseKey(expense))}
                   />
                 ))}
               </div>
@@ -998,10 +1046,23 @@ export default function Dashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {displayedQatar.map((expense, idx) => (
+                    {displayedQatar.map((expense, idx) => {
+                      const expenseKey = getExpenseKey(expense);
+                      const isFaded = completedMonths.has(getYearMonth(expense.date)) || completedExpenses.has(expenseKey);
+                      return (
                       <TableRow
-                        key={`${expense.date}-${expense.merchant}-${expense.amount}`}
-                        className={`border-[#3f3f3f] hover:bg-[#272727] transition-colors ${completedMonths.has(getYearMonth(expense.date)) ? 'opacity-40' : ''}`}
+                        key={expenseKey}
+                        onClick={() => toggleExpense(expenseKey)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            toggleExpense(expenseKey);
+                          }
+                        }}
+                        role="button"
+                        tabIndex={0}
+                        aria-pressed={isFaded}
+                        className={`border-[#3f3f3f] hover:bg-[#272727] transition-colors transition-opacity cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#717171] ${isFaded ? 'opacity-40' : ''}`}
                         style={{
                           transitionDuration: 'var(--duration-fast)',
                           animation: `fadeIn ${300 + idx * 50}ms var(--ease-out-quart) backwards`
@@ -1021,7 +1082,8 @@ export default function Dashboard() {
                           {expense.location}
                         </TableCell>
                       </TableRow>
-                    ))}
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
